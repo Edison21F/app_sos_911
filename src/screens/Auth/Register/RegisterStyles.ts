@@ -1,7 +1,7 @@
 // RegisterStyles.ts
 
 import { StyleSheet, Dimensions, Platform } from 'react-native';
-
+import { theme } from '../../../theme/theme';
 
 const { width, height } = Dimensions.get('window');
 
@@ -9,11 +9,11 @@ const { width, height } = Dimensions.get('window');
 export const RegisterStyles = StyleSheet.create({
   // Contenedor principal de la pantalla.
   container: {
-    flex: 1, 
+    flex: 1,
     backgroundColor: 'transparent',
   },
 
-  
+
   keyboardAvoidingView: {
     flex: 1,
     paddingTop: Platform.OS === 'ios' ? 90 : 65,
@@ -34,16 +34,16 @@ export const RegisterStyles = StyleSheet.create({
 
   // Estilo del título principal.
   title: {
-    fontSize: 30,
+    fontSize: 32,
     fontWeight: '700',
-    color: '#fff',
+    color: theme.colors.text, // Blanco
     marginBottom: 10,
   },
 
   // Estilo del subtítulo.
   subtitle: {
     fontSize: 16,
-    color: '#fff',
+    color: theme.colors.textSecondary, // Gris claro
     textAlign: 'center',
     paddingHorizontal: 10,
     lineHeight: 22,
@@ -51,14 +51,16 @@ export const RegisterStyles = StyleSheet.create({
 
   // Contenedor del formulario.
   formContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.card, // Glassmorphism
     borderRadius: 20,
     paddingVertical: 25,
     paddingHorizontal: 25,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 15,
     elevation: 8,
     marginTop: 5,
   },
@@ -71,8 +73,8 @@ export const RegisterStyles = StyleSheet.create({
   // Estilo para las etiquetas de los inputs.
   label: {
     fontSize: 15,
-    color: '#444',
-    marginBottom: 6,
+    color: theme.colors.textSecondary,
+    marginBottom: 8,
     marginLeft: 2,
     fontWeight: '600',
   },
@@ -81,24 +83,24 @@ export const RegisterStyles = StyleSheet.create({
   inputWithIcon: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f9f9f9',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)', // Translucido
     borderRadius: 12,
     height: 52,
     paddingHorizontal: 18,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
 
   icon: {
     marginRight: 10,
-    color: '#999',
+    color: theme.colors.textSecondary,
   },
 
   inputField: {
     flex: 1,
     fontSize: 16,
     fontWeight: '400',
-    color: '#333',
+    color: theme.colors.text,
     paddingVertical: 0,
   },
 
@@ -106,18 +108,18 @@ export const RegisterStyles = StyleSheet.create({
   passwordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f9f9f9',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 12,
     height: 52,
     paddingHorizontal: 18,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
 
   passwordInput: {
     flex: 1,
     fontSize: 16,
-    color: '#333',
+    color: theme.colors.text,
     paddingVertical: 0,
   },
 
@@ -128,17 +130,17 @@ export const RegisterStyles = StyleSheet.create({
 
 
   registerButton: {
-    backgroundColor: '#008080',
+    backgroundColor: theme.colors.primary,
     borderRadius: 28,
     height: 58,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 10,
-    shadowColor: '#008080',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.3,
+    shadowColor: theme.colors.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
     shadowRadius: 15,
-    elevation: 12,
+    elevation: 8,
   },
   registerButtonText: {
     color: '#fff',
@@ -162,7 +164,7 @@ export const RegisterStyles = StyleSheet.create({
   },
 
   linkText: {
-    color: '#00ACAC',
+    color: theme.colors.primary,
     fontWeight: '700',
     textDecorationLine: 'underline',
   },
@@ -178,13 +180,13 @@ export const RegisterStyles = StyleSheet.create({
 
 
   loginText: {
-    color: '#666',
+    color: theme.colors.textSecondary,
     fontSize: 15,
   },
 
   // Estilo del enlace para iniciar sesión.
   loginLink: {
-    color: '#00ACAC',
+    color: theme.colors.primary,
     fontSize: 15,
     fontWeight: '700',
     marginLeft: 6,
@@ -203,5 +205,11 @@ export const RegisterStyles = StyleSheet.create({
     left: 20,
     zIndex: 10,
     padding: 5,
+    backgroundColor: 'rgba(0,0,0,0.3)', // Semi-transparent background for visibility
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

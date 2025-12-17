@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  Image, 
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
   FlatList,
   SafeAreaView,
   ImageBackground,
@@ -18,6 +18,7 @@ import AddGroup from './Add/AddGroup';
 import { GroupsScreenProps } from '../../navigation/Navigator';
 import styles from './GroupsStyles';
 import { LinearGradient } from 'expo-linear-gradient';
+import { theme } from '../../theme/theme';
 
 
 interface GroupMember {
@@ -82,8 +83,8 @@ export const GroupsScreen: React.FC<GroupsScreenProps> = ({ navigation }) => {
     >
       <View style={styles.groupImageContainer}>
         {item.image ? (
-          <Image 
-            source={item.image} 
+          <Image
+            source={item.image}
             style={styles.groupImage}
             defaultSource={require('../../assets/erick.jpg')}
           />
@@ -126,7 +127,7 @@ export const GroupsScreen: React.FC<GroupsScreenProps> = ({ navigation }) => {
           setEditedGroupName(item.name);
         }}
       >
-        <Ionicons name="pencil" size={22} color="#00ACAC" />
+        <Ionicons name="pencil" size={20} color={theme.colors.textSecondary} />
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.editIcon}
@@ -135,14 +136,14 @@ export const GroupsScreen: React.FC<GroupsScreenProps> = ({ navigation }) => {
           handleDeleteGroup(item.id);
         }}
       >
-        <MaterialIcons name="delete" size={22} color="#FF4D4F" />
+        <MaterialIcons name="delete" size={20} color={theme.colors.danger} />
       </TouchableOpacity>
     </TouchableOpacity>
   );
 
   if (isCreating) {
     return (
-      <AddGroup 
+      <AddGroup
         onCreateGroup={handleCreateGroup}
         onCancel={() => setIsCreating(false)}
       />
@@ -150,16 +151,16 @@ export const GroupsScreen: React.FC<GroupsScreenProps> = ({ navigation }) => {
   }
 
   return (
-<LinearGradient
-  colors={['#026b6b', '#2D353C']} // Updated colors
-  style={styles.backgroundImage}
-  start={{ x: 0, y: 0 }} // Updated start point
-  end={{ x: 1, y: 1 }}   // Updated end point
->
+    <LinearGradient
+      colors={theme.colors.gradientBackground}
+      style={styles.backgroundImage}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+    >
       <SafeAreaView style={styles.container}>
-        <Header 
+        <Header
           onMenuPress={() => setSidebarOpen(true)}
-          customTitle="Grupos" 
+          customTitle="Grupos"
         />
 
         {groups.length > 0 ? (
@@ -179,12 +180,12 @@ export const GroupsScreen: React.FC<GroupsScreenProps> = ({ navigation }) => {
           </View>
         )}
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.fab}
           onPress={() => setIsCreating(true)}
           activeOpacity={0.7}
         >
-          <Ionicons name="add" size={32} color="#FFFFFFFF" />
+          <Ionicons name="add" size={32} color="#FFF" />
         </TouchableOpacity>
 
         <CustomSidebar
@@ -192,7 +193,7 @@ export const GroupsScreen: React.FC<GroupsScreenProps> = ({ navigation }) => {
           onClose={() => setSidebarOpen(false)}
         />
       </SafeAreaView>
-   </LinearGradient>
+    </LinearGradient>
   );
 };
 

@@ -11,11 +11,13 @@ import {
 import { Plus, Trash2, ChevronRight } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 // import AsyncStorage from '@react-native-async-storage/async-storage'; // Commented out
-// import axios from 'axios'; // Commented out
+import api from '../../api/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import CustomSidebar from '../../components/Sidebar/Sidebar';
 import Header from '../../components/Header/Header';
-import { styles, theme } from './EmergencyContactsStyles';
+import { styles } from './EmergencyContactsStyles';
+import { theme } from '../../theme/theme';
 import { normalize } from '../../utils/dimensions';
 
 interface Contact {
@@ -25,51 +27,76 @@ interface Contact {
   descripcion: string;
 }
 
-// Hardcoded initial contacts
-const initialContacts: Contact[] = [
-  { id: '1', nombre: 'Juan Pérez', telefono: '+593991234567', descripcion: 'Amigo Cercano' },
-  { id: '2', nombre: 'María García', telefono: '+593987654321', descripcion: 'Madre' },
-  { id: '3', nombre: 'Carlos López', telefono: '+593965432109', descripcion: 'Hermano' },
-];
+// Remove hardcoded contacts
+const initialContacts: Contact[] = [];
 
 const EmergencyContactsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
-  const [contacts, setContacts] = useState<Contact[]>(initialContacts);
-  const [loading, setLoading] = useState(false); // Set to false for hardcoded data
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [requests, setRequests] = useState<any[]>([]); // New state for pending requests
+  const [loading, setLoading] = useState(false);
   const [isSidebarOpen, setSidebarOpen] = useState(false);
 
-  useEffect(() => {
-    // Simulate fetching contacts
-    setLoading(true);
-    setTimeout(() => {
-      // In a real app, you might load from local storage or a mock backend here
-      setLoading(false);
-    }, 1000);
-  }, []);
+  // Fetch CONTACTS (Vinculados/Propios)
+  const fetchContacts = async () => {
+    try {
+      const clienteId = await AsyncStorage.getItem('clienteId');
+      if (!clienteId) return;
 
-  // Recargar contactos cuando la pantalla se enfoca (regresa de otras pantallas)
+      const response = await api.get(`/contactos_emergencias/listar/por-cliente/${clienteId}`);
+      if (response.data) {
+        setContacts(response.data.map((c: any) => ({
+          id: c.id,
+          nombre: c.nombre,
+          telefono: c.telefono,
+          descripcion: c.descripcion || c.relacion,
+          estado: c.estado // Guardamos estado para mostrar badge
+        })));
+      }
+    } catch (error) {
+      console.error('Error fetching contacts:', error);
+    }
+  };
+
+  // Fetch PENDING REQUESTS
+  const fetchRequests = async () => {
+    try {
+      const clienteId = await AsyncStorage.getItem('clienteId');
+      if (!clienteId) return;
+
+      const response = await api.get(`/contactos_emergencias/solicitudes/${clienteId}`);
+      if (response.data) {
+        setRequests(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching requests:', error);
+    }
+  };
+
+  const loadAll = async () => {
+    setLoading(true);
+    await Promise.all([fetchContacts(), fetchRequests()]);
+    setLoading(false);
+  }
+
   useFocusEffect(
     React.useCallback(() => {
-      // In a real app, you would re-fetch or update state from a shared source
-      // For hardcoded, we can just ensure the state is consistent if changes happen elsewhere
-      console.log("EmergencyContactsScreen focused, contacts updated if any changes from Add/Edit");
-      // If ContactDetails or AddContact modify a global state, you'd reflect it here.
-      // For this example, we'll rely on navigation.navigate's params or direct state manipulation.
+      loadAll();
     }, [])
   );
 
-  // This function will now be passed to AddContact and ContactDetails
-  // to update the contacts array in this component
-  const updateContacts = (updatedContact: Contact | null, type: 'add' | 'edit' | 'delete') => {
-    if (type === 'add' && updatedContact) {
-      setContacts(prevContacts => [...prevContacts, updatedContact]);
-    } else if (type === 'edit' && updatedContact) {
-      setContacts(prevContacts =>
-        prevContacts.map(contact =>
-          contact.id === updatedContact.id ? updatedContact : contact
-        )
-      );
-    } else if (type === 'delete' && updatedContact) {
-      setContacts(prevContacts => prevContacts.filter(contact => contact.id !== updatedContact.id));
+  const handleRespond = async (requestId: number, respuesta: 'ACEPTAR' | 'RECHAZAR') => {
+    try {
+      setLoading(true);
+      await api.patch('/contactos_emergencias/responder', {
+        id: requestId,
+        respuesta
+      });
+      Alert.alert('Éxito', `Solicitud ${respuesta === 'ACEPTAR' ? 'aceptada' : 'rechazada'}.`);
+      loadAll();
+    } catch (error) {
+      console.error('Error responding:', error);
+      Alert.alert('Error', 'No se pudo responder la solicitud.');
+      setLoading(false);
     }
   };
 
@@ -82,13 +109,18 @@ const EmergencyContactsScreen: React.FC<{ navigation: any }> = ({ navigation }) 
         {
           text: 'Eliminar',
           style: 'destructive',
-          onPress: () => {
-            setLoading(true);
-            setTimeout(() => {
-              updateContacts(contactToDelete, 'delete');
+          onPress: async () => {
+            try {
+              setLoading(true);
+              await api.delete(`/contactos_emergencias/eliminar/${contactToDelete.id}`);
               Alert.alert('Éxito', 'Contacto eliminado correctamente');
+              fetchContacts();
+            } catch (error) {
+              console.error('Error deleting contact:', error);
+              Alert.alert('Error', 'No se pudo eliminar el contacto.');
+            } finally {
               setLoading(false);
-            }, 500); // Simulate network delay
+            }
           },
         },
       ],
@@ -96,7 +128,7 @@ const EmergencyContactsScreen: React.FC<{ navigation: any }> = ({ navigation }) 
   };
 
   const getInitials = (nombre: string) => {
-    if (!nombre.trim()) return 'CO';
+    if (!nombre || !nombre.trim()) return 'CO';
     return nombre
       .split(' ')
       .map(word => word.charAt(0))
@@ -105,12 +137,37 @@ const EmergencyContactsScreen: React.FC<{ navigation: any }> = ({ navigation }) 
       .slice(0, 2);
   };
 
+  const renderRequestItem = (req: any) => (
+    <View key={req.id} style={[styles.contactCard, { borderColor: '#Eab308', borderWidth: 1 }]}>
+      <View style={styles.contactInfo}>
+        <Text style={styles.contactName}>{req.nombre}</Text>
+        <Text style={[styles.contactRelation, { color: '#Eab308', fontWeight: 'bold' }]}>
+          Solicitud de Contacto
+        </Text>
+      </View>
+      <View style={{ flexDirection: 'row' }}>
+        <TouchableOpacity
+          onPress={() => handleRespond(req.id, 'ACEPTAR')}
+          style={{ backgroundColor: '#22c55e', padding: 8, borderRadius: 5, marginRight: 5 }}
+        >
+          <Text style={{ color: 'white', fontWeight: 'bold' }}>Aceptar</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => handleRespond(req.id, 'RECHAZAR')}
+          style={{ backgroundColor: '#ef4444', padding: 8, borderRadius: 5 }}
+        >
+          <Text style={{ color: 'white', fontWeight: 'bold' }}>X</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
   const renderContactCard = (contact: Contact) => (
     <TouchableOpacity
       key={contact.id}
       style={styles.contactCard}
       activeOpacity={0.8}
-      onPress={() => navigation.navigate('ContactDetails', { contact, updateContacts })}
+      onPress={() => navigation.navigate('ContactDetails', { contact })}
     >
       <View style={styles.contactImageContainer}>
         <View style={styles.initialsContainer}>
@@ -120,6 +177,15 @@ const EmergencyContactsScreen: React.FC<{ navigation: any }> = ({ navigation }) 
       <View style={styles.contactInfo}>
         <Text style={styles.contactName}>{contact.nombre}</Text>
         <Text style={styles.contactRelation}>{contact.descripcion}</Text>
+        {/* Status Badge */}
+        {/* @ts-ignore */}
+        {contact.estado === 'PENDIENTE' && (
+          <Text style={{ fontSize: 10, color: '#Eab308', fontWeight: 'bold' }}>PENDIENTE</Text>
+        )}
+        {/* @ts-ignore */}
+        {contact.estado === 'VINCULADO' && (
+          <Text style={{ fontSize: 10, color: '#22c55e', fontWeight: 'bold' }}>VINCULADO</Text>
+        )}
       </View>
       <View style={styles.contactActions}>
         <TouchableOpacity onPress={() => handleDelete(contact)} style={styles.deleteButton}>
@@ -130,44 +196,42 @@ const EmergencyContactsScreen: React.FC<{ navigation: any }> = ({ navigation }) 
     </TouchableOpacity>
   );
 
-  if (loading) {
-    return (
-      <LinearGradient
-        colors={['#026b6b', '#2D353C']}
-        style={styles.backgroundImage}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        <SafeAreaView style={styles.safeArea}>
-          <Header onMenuPress={() => setSidebarOpen(true)} customTitle="Contactos de Emergencia" />
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#0891b2" />
-            <Text style={styles.loadingText}>Cargando contactos...</Text>
-          </View>
-        </SafeAreaView>
-      </LinearGradient>
-    );
-  }
-
   return (
-   <LinearGradient
-  colors={['#026b6b', '#2D353C']} // Updated colors
-  style={styles.backgroundImage}
-  start={{ x: 0, y: 0 }} // Updated start point
-  end={{ x: 1, y: 1 }}   // Updated end point
->
+    <LinearGradient
+      colors={theme.colors.gradientBackground}
+      style={styles.backgroundImage}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+    >
       <SafeAreaView style={styles.safeArea}>
         <Header onMenuPress={() => setSidebarOpen(true)} customTitle="Contactos de Emergencia" />
         <ScrollView contentContainerStyle={styles.content}>
+          {loading && <ActivityIndicator size="small" color="#fff" style={{ marginBottom: 10 }} />}
+
+          {/* SECTION REQUESTS */}
+          {requests.length > 0 && (
+            <View style={{ marginBottom: 20 }}>
+              <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold', marginBottom: 10 }}>Solicitudes Pendientes</Text>
+              {requests.map(renderRequestItem)}
+            </View>
+          )}
+
+          {/* SECTION CONTACTS */}
+          <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold', marginBottom: 10 }}>Mis Contactos</Text>
           {contacts.map(renderContactCard)}
+
+          {contacts.length === 0 && !loading && (
+            <Text style={{ color: '#ccc', textAlign: 'center', marginTop: 20 }}>No tienes contactos registrados.</Text>
+          )}
+
         </ScrollView>
         <TouchableOpacity
           style={styles.addButtonContainer}
           activeOpacity={0.9}
-          onPress={() => navigation.navigate('AddContact', { updateContacts })}
+          onPress={() => navigation.navigate('AddContact')}
         >
           <LinearGradient
-            colors={[theme.colors.primary, theme.colors.primaryAlt]}
+            colors={theme.colors.gradientButton}
             style={styles.addButton}
           >
             <Plus size={normalize(28)} color="#FFF" />

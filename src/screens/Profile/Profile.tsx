@@ -1,44 +1,39 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, TouchableOpacity, ImageBackground, StyleSheet, ScrollView, Modal, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, ScrollView, Modal, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from "react-native";
 import { styles } from "./profileStyles";
 import { AntDesign } from "@expo/vector-icons";
 import Header from "../../components/Header/Header";
 import CustomSidebar from "../../components/Sidebar/Sidebar";
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons, Feather, FontAwesome5 } from '@expo/vector-icons';
-// import axios from 'axios'; // Commented out
-// import AsyncStorage from '@react-native-async-storage/async-storage'; // Commented out
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as ImagePicker from 'expo-image-picker';
+import api from '../../api/api';
+import { theme } from '../../theme/theme';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { format } from 'date-fns';
 
-
-// axios.defaults.withCredentials = true; // Commented out
-
-// Hardcoded initial profile data
-const HARDCODED_PROFILE_DATA = {
-  id: 'cliente_mock_1',
-  nombre: 'Ismael Vargas',
-  correo_electronico: 'ismael@gmail.com',
-  cedula_identidad: '1234567890',
-  direccion: 'Calle Ficticia 123, Ciudad Ficticia',
-  fecha_nacimiento: '1990-05-15', // Added birth date
-};
-
-// Hardcoded initial phone numbers - ONLY PRINCIPAL
-const HARDCODED_PHONE_NUMBERS = [
-  { id: 101, detalle: 'Principal', numero: '+593991112233' },
-  // Removed Trabajo number
-];
+// Base URL for images - Adjust as per your environment
+// Assuming the API base URL is something like http://IP:PORT/api
+// we need to construct the image URL.
+// If api.defaults.baseURL is "http://192.168.100.225:4000/api",
+// then images are at "http://192.168.100.225:4000/uploads/profiles/..."
+const API_BASE_URL = api.defaults.baseURL ? api.defaults.baseURL.replace('/api', '') : '';
 
 const ProfileScreen = () => {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
-  const [originalEmail, setOriginalEmail] = useState(""); // Para comparar si cambió
+  const [originalEmail, setOriginalEmail] = useState("");
   const [address, setAddress] = useState("");
-  const [password, setPassword] = useState(""); // Para nueva contraseña
+  const [password, setPassword] = useState("");
   const [idNumber, setIdNumber] = useState("");
-  const [birthDate, setBirthDate] = useState(""); // New state for birth date
+  const [birthDate, setBirthDate] = useState("");
   const [clienteId, setClienteId] = useState<string | null>(null);
+  const [profileImage, setProfileImage] = useState<string | null>(null); // State for profile image
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false); // State for image upload
   const [isEditing, setIsEditing] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showPhoneModal, setShowPhoneModal] = useState(false);
@@ -48,71 +43,79 @@ const ProfileScreen = () => {
   const [phoneList, setPhoneList] = useState([] as { id: number; detalle: string; numero: string }[]);
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [editPhoneIndex, setEditPhoneIndex] = useState<number | null>(null);
-  const [isLoadingPhones, setIsLoadingPhones] = useState(false); // Can keep this true initially if you want to simulate phone loading
+  const [isLoadingPhones, setIsLoadingPhones] = useState(false);
   const [isSavingPhone, setIsSavingPhone] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
-  // Cargar datos del cliente al inicializar (simulado)
+
+  const handleDateChange = (event: any, selectedDate?: Date) => {
+    setShowDatePicker(false);
+    if (selectedDate) {
+      setBirthDate(format(selectedDate, 'yyyy-MM-dd'));
+    }
+  };
+
+  // Cargar datos del cliente al inicializar
   useEffect(() => {
     const loadClientProfile = async () => {
       try {
         setIsLoading(true);
 
-        // Simulate fetching clienteId from AsyncStorage or similar
-        // const storedClienteId = await AsyncStorage.getItem('clienteId');
-        const storedClienteId = HARDCODED_PROFILE_DATA.id; // Hardcoded
+        const storedClienteId = await AsyncStorage.getItem('clienteId');
         if (!storedClienteId) {
-          Alert.alert('Error', 'No se encontró el ID del cliente (simulado).');
+          Alert.alert('Error', 'No se encontró la sesión del cliente.');
           return;
         }
 
         setClienteId(storedClienteId);
 
-        // Simulate getting CSRF token
-        // const csrfResponse = await axios.get('http://192.168.1.31:9000/csrf-token');
-        // const csrfToken = csrfResponse.data.csrfToken;
-        const csrfToken = 'mock-csrf-token'; // Hardcoded
-
-        // Simulate fetching client data
-        // const response = await axios.get(...);
-        const clienteData = HARDCODED_PROFILE_DATA; // Hardcoded
+        // Fetch client data
+        const response = await api.get(`/clientes/detalle/${storedClienteId}`);
+        const clienteData = response.data;
 
         if (clienteData) {
-          console.log('Datos del cliente cargados (simulado):', clienteData);
+          console.log('Datos del cliente cargados:', clienteData);
+          console.log('Foto perfil en datos:', clienteData.foto_perfil);
 
           const nombre = clienteData.nombre || '';
           const correo = clienteData.correo_electronico || '';
           const cedula = clienteData.cedula_identidad || '';
           const direccion = clienteData.direccion || '';
-          const fechaNacimiento = clienteData.fecha_nacimiento || ''; // Load birth date
+          const fechaNacimiento = clienteData.fecha_nacimiento ? clienteData.fecha_nacimiento.split('T')[0] : '';
 
           setFullName(nombre);
           setEmail(correo);
           setOriginalEmail(correo);
           setIdNumber(cedula);
           setAddress(direccion);
-          setBirthDate(fechaNacimiento); // Set birth date
+          setBirthDate(fechaNacimiento);
 
-          console.log('Email cargado (simulado):', correo);
-          console.log('Nombre cargado (simulado):', nombre);
+          if (clienteData.foto_perfil) {
+            const imageUrl = `${API_BASE_URL}/uploads/profiles/${clienteData.foto_perfil}`;
+            console.log('Constructed Profile Image URL:', imageUrl);
+            setProfileImage(imageUrl);
+          } else {
+            console.log('No profile picture set in backend data.');
+          }
+
 
           if (!correo.trim()) {
             Alert.alert(
               'Perfil incompleto',
-              'Tu perfil no tiene un correo electrónico registrado (simulado). Por favor actualízalo.',
+              'Tu perfil no tiene un correo electrónico registrado. Por favor actualízalo.',
               [{ text: 'OK' }]
             );
           }
         } else {
-          console.error('No se recibieron datos del cliente (simulado)');
-          Alert.alert('Error', 'No se pudieron cargar los datos del perfil (simulado)');
+          Alert.alert('Error', 'No se pudieron cargar los datos del perfil');
         }
 
-        // Simulate loading phone numbers
-        await loadPhoneNumbers(storedClienteId, csrfToken);
+        // Load phone numbers
+        await loadPhoneNumbers(storedClienteId);
 
       } catch (error) {
-        console.error('Error al cargar perfil del cliente (simulado):', error);
-        Alert.alert('Error', 'Error inesperado al cargar el perfil (simulado)');
+        console.error('Error al cargar perfil del cliente:', error);
+        Alert.alert('Error', 'Error inesperado al cargar el perfil');
       } finally {
         setIsLoading(false);
       }
@@ -121,19 +124,21 @@ const ProfileScreen = () => {
     loadClientProfile();
   }, []);
 
-  // Función para cargar números de teléfono (simulado)
-  const loadPhoneNumbers = async (clienteId: string, csrfToken: string) => {
+  // Función para cargar números de teléfono
+  const loadPhoneNumbers = async (clienteIdParam: string) => {
     try {
       setIsLoadingPhones(true);
-      // Simulate API call
-      // const response = await axios.get(...);
-      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
+      const response = await api.get(`/clientes_numeros/listar/por-cliente/${clienteIdParam}`);
 
-      // const mappedPhones = response.data.map(...);
-      setPhoneList(HARDCODED_PHONE_NUMBERS); // Use hardcoded data (now only Principal)
+      const mappedPhones = response.data.map((p: any) => ({
+        id: p.id,
+        detalle: p.nombre, // Mapping 'nombre' from backend as 'detalle' in frontend
+        numero: p.numero
+      }));
+      setPhoneList(mappedPhones);
     } catch (error) {
-      console.error('Error al cargar números de teléfono (simulado):', error);
-      setPhoneList([]);
+      console.error('Error al cargar números de teléfono:', error);
+      // Don't clear list on error to avoid flashing empty state if intermittent
     } finally {
       setIsLoadingPhones(false);
     }
@@ -141,18 +146,13 @@ const ProfileScreen = () => {
 
   // Función para validar el teléfono
   const validatePhone = (phone: string): boolean => {
-    // Acepta números con o sin +, de 7 a 15 dígitos
     const phoneRegex = /^[+]?[\d\s\-\(\)]{7,15}$/;
-    const cleanPhone = phone.replace(/[\s\-\(\)]/g, ''); // Limpia espacios, guiones y paréntesis
+    const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
     return phoneRegex.test(phone) && cleanPhone.length >= 7 && cleanPhone.length <= 15;
   };
 
-
   const addPhone = async () => {
-    if (!clienteId) {
-      Alert.alert('Error', 'No se encontró el ID del cliente (simulado).');
-      return;
-    }
+    if (!clienteId) return;
 
     if (!newPhone.trim() || !newPhoneDetail.trim()) {
       setPhoneError("Por favor completa todos los campos");
@@ -164,55 +164,44 @@ const ProfileScreen = () => {
       return;
     }
 
-    // Verificar si ya existe el número
-    const phoneExists = phoneList.some(phone => phone.numero === newPhone.trim());
-    if (phoneExists) {
-      setPhoneError("Este número ya está registrado");
-      return;
-    }
-
     try {
       setIsSavingPhone(true);
 
-      // Simulate API call and delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // const csrfResponse = await axios.get(...);
-      // const csrfToken = csrfResponse.data.csrfToken;
-
-      // const phoneData = {...};
-      // const response = await axios.post(...);
-
-      // Simulate successful response and update local list
-      const newId = Math.floor(Math.random() * 100000) + 200; // Generate a "unique" ID
-      const newPhoneEntry = {
-        id: newId,
-        detalle: newPhoneDetail.trim(),
+      const payload = {
+        clienteId: clienteId,
+        nombre: newPhoneDetail.trim(),
         numero: newPhone.trim()
       };
-      setPhoneList(prev => [...prev, newPhoneEntry]); // Update state directly
+
+      const response = await api.post('/clientes_numeros/crear', payload);
+
+      const newPhoneData = response.data.clienteNumero;
+      const newPhoneEntry = {
+        id: newPhoneData.id,
+        detalle: newPhoneData.nombre,
+        numero: newPhoneData.numero
+      };
+
+      setPhoneList(prev => [...prev, newPhoneEntry]);
 
       setNewPhone("");
       setNewPhoneDetail("");
       setPhoneError("");
       setShowPhoneModal(false);
 
-      Alert.alert('Éxito', 'Número de teléfono agregado correctamente (simulado).');
+      Alert.alert('Éxito', 'Número de teléfono agregado correctamente.');
 
-    } catch (error) {
-      console.error('Error al agregar teléfono (simulado):', error);
-      Alert.alert('Error', 'No se pudo agregar el número de teléfono (simulado). Por favor, inténtalo nuevamente.');
+    } catch (error: any) {
+      console.error('Error al agregar teléfono:', error);
+      const msg = error.response?.data?.message || 'No se pudo agregar el número.';
+      setPhoneError(msg);
     } finally {
       setIsSavingPhone(false);
     }
   };
 
-
   const editPhone = async () => {
-    if (!clienteId || editPhoneIndex === null) {
-      Alert.alert('Error', 'Error en la edición del teléfono (simulado).');
-      return;
-    }
+    if (!clienteId || editPhoneIndex === null) return;
 
     if (!newPhone.trim() || !newPhoneDetail.trim()) {
       setPhoneError("Por favor completa todos los campos");
@@ -226,28 +215,17 @@ const ProfileScreen = () => {
 
     const phoneToEdit = phoneList[editPhoneIndex];
 
-    // Verificar si ya existe el número (excluyendo el que se está editando)
-    const phoneExists = phoneList.some((phone, index) =>
-      phone.numero === newPhone.trim() && index !== editPhoneIndex
-    );
-    if (phoneExists) {
-      setPhoneError("Este número ya está registrado");
-      return;
-    }
-
     try {
       setIsSavingPhone(true);
 
-      // Simulate API call and delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const payload = {
+        nombre: newPhoneDetail.trim(),
+        numero: newPhone.trim(),
+        estado: 'activo'
+      };
 
-      // const csrfResponse = await axios.get(...);
-      // const csrfToken = csrfResponse.data.csrfToken;
+      await api.put(`/clientes_numeros/actualizar/${phoneToEdit.id}`, payload);
 
-      // const phoneData = {...};
-      // await axios.put(...);
-
-      // Actualizar la lista local
       const updatedPhoneList = [...phoneList];
       updatedPhoneList[editPhoneIndex] = {
         ...phoneToEdit,
@@ -255,7 +233,6 @@ const ProfileScreen = () => {
         detalle: newPhoneDetail.trim()
       };
       setPhoneList(updatedPhoneList);
-
 
       setNewPhone("");
       setNewPhoneDetail("");
@@ -265,15 +242,15 @@ const ProfileScreen = () => {
 
       Alert.alert('Éxito', 'Número de teléfono actualizado correctamente');
 
-    } catch (error) {
-      console.error('Error al actualizar teléfono (simulado):', error);
-      Alert.alert('Error', 'No se pudo actualizar el número de teléfono (simulado). Por favor, inténtalo nuevamente.');
+    } catch (error: any) {
+      console.error('Error al actualizar teléfono:', error);
+      const msg = error.response?.data?.message || 'No se pudo actualizar el número.';
+      setPhoneError(msg);
     } finally {
       setIsSavingPhone(false);
     }
   };
 
-  // Función para eliminar un número de teléfono (simulado)
   const deletePhone = (index: number) => {
     const phoneToDelete = phoneList[index];
 
@@ -287,29 +264,22 @@ const ProfileScreen = () => {
           style: 'destructive',
           onPress: async () => {
             try {
-              // Simulate API call and delay
-              await new Promise(resolve => setTimeout(resolve, 500));
-
-              // const csrfResponse = await axios.get(...);
-              // const csrfToken = csrfResponse.data.csrfToken;
-
-              // await axios.delete(...);
+              await api.delete(`/clientes_numeros/eliminar/${phoneToDelete.id}`);
 
               const updatedPhoneList = phoneList.filter((_, i) => i !== index);
-              setPhoneList(updatedPhoneList); // Update state directly
+              setPhoneList(updatedPhoneList);
 
-              Alert.alert('Éxito', 'Número de teléfono eliminado correctamente (simulado).');
+              Alert.alert('Éxito', 'Número de teléfono eliminado correctamente.');
 
             } catch (error) {
-              console.error('Error al eliminar teléfono (simulado):', error);
-              Alert.alert('Error', 'No se pudo eliminar el número de teléfono (simulado). Por favor, inténtalo nuevamente.');
+              console.error('Error al eliminar teléfono:', error);
+              Alert.alert('Error', 'No se pudo eliminar el número de teléfono.');
             }
           }
         }
       ]
     );
   };
-
 
   const openAddPhoneModal = () => {
     setNewPhone("");
@@ -319,7 +289,6 @@ const ProfileScreen = () => {
     setShowPhoneModal(true);
   };
 
-  // Función para abrir el modal de editar teléfono
   const openEditPhoneModal = (index: number) => {
     const phone = phoneList[index];
     setNewPhone(phone.numero);
@@ -329,7 +298,6 @@ const ProfileScreen = () => {
     setShowPhoneModal(true);
   };
 
-  // Función para cerrar el modal de teléfono
   const closePhoneModal = () => {
     setShowPhoneModal(false);
     setNewPhone("");
@@ -337,7 +305,6 @@ const ProfileScreen = () => {
     setPhoneError("");
     setEditPhoneIndex(null);
   };
-
 
   const handleSavePhone = () => {
     if (editPhoneIndex !== null) {
@@ -347,89 +314,123 @@ const ProfileScreen = () => {
     }
   };
 
+  const pickImage = async () => {
+    console.log("pickImage button pressed"); // DEBUG LOG
+    // Request permission
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (permissionResult.granted === false) {
+      Alert.alert("Permiso denegado", "Se requiere permiso para acceder a la galería.");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images, // Using deprecated Options because MediaType fails to open gallery
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+
+    if (!result.canceled) {
+      console.log("Image picked, starting upload for URI:", result.assets[0].uri); // DEBUG LOG
+      uploadImage(result.assets[0].uri);
+    } else {
+      console.log("Image picker canceled");
+    }
+  };
+
+  const uploadImage = async (uri: string) => {
+    if (!clienteId) return;
+
+    setIsUploadingImage(true);
+
+    try {
+      const formData = new FormData();
+
+      // @ts-ignore
+      formData.append('foto_perfil', {
+        uri: Platform.OS === 'android' ? uri : uri.replace('file://', ''),
+        name: `profile_${clienteId}.jpg`,
+        type: 'image/jpeg',
+      });
+
+      // Using fetch instead of axios for better FormData handling in React Native
+      const response = await fetch(`${API_BASE_URL}/clientes/upload-profile/${clienteId}`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Accept': 'application/json',
+          // Do NOT set Content-Type header, let fetch set it with the boundary
+        },
+      });
+
+      const responseData = await response.json();
+
+      if (response.ok && responseData.foto_perfil) {
+        setProfileImage(`${API_BASE_URL}/uploads/profiles/${responseData.foto_perfil}`);
+        Alert.alert("Éxito", "Foto de perfil actualizada.");
+      } else {
+        throw new Error(responseData.message || 'Error al subir la imagen');
+      }
+
+    } catch (error: any) {
+      console.error("Error uploading image:", error);
+      Alert.alert("Error", error.message || "No se pudo actualizar la foto de perfil.");
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
   const handleEditPress = () => {
     setIsEditing(true);
   };
 
   const handleSavePress = async () => {
-    if (!clienteId) {
-      Alert.alert('Error', 'No se encontró el ID del cliente (simulado)');
-      return;
-    }
+    if (!clienteId) return;
 
     try {
       setIsSaving(true);
 
-      console.log('Guardando perfil con email (simulado):', email);
-      console.log('Email original (simulado):', originalEmail);
-
-      // Validaciones básicas
-      if (!fullName.trim()) {
-        Alert.alert('Error', 'El nombre es obligatorio');
+      if (!fullName.trim() || !email.trim() || !idNumber.trim() || !birthDate.trim()) {
+        Alert.alert('Error', 'Por favor completa todos los campos obligatorios');
         return;
       }
 
-      if (!email.trim()) {
-        Alert.alert('Error', 'El correo electrónico es obligatorio');
-        return;
-      }
-
-      // Validar formato de correo electrónico
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email.trim())) {
         Alert.alert('Error', 'El formato del correo electrónico no es válido');
         return;
       }
 
-      if (!idNumber.trim()) {
-        Alert.alert('Error', 'El número de identificación es obligatorio');
-        return;
+      const payload: any = {
+        nombre: fullName.trim(),
+        correo_electronico: email.trim(),
+        cedula_identidad: idNumber.trim(),
+        direccion: address.trim(),
+        fecha_nacimiento: birthDate.trim()
+      };
+
+      if (password.trim()) {
+        payload.contrasena = password.trim();
       }
 
-      if (!birthDate.trim()) { // Validate birth date
-        Alert.alert('Error', 'La fecha de nacimiento es obligatoria');
-        return;
-      }
-      // Basic date format validation (YYYY-MM-DD)
-      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-      if (!dateRegex.test(birthDate.trim())) {
-        Alert.alert('Error', 'El formato de la fecha de nacimiento debe ser AAAA-MM-DD');
-        return;
-      }
+      await api.put(`/clientes/actualizar/${clienteId}`, payload);
 
+      setOriginalEmail(email.trim());
+      Alert.alert('Éxito', 'Perfil actualizado correctamente', [
+        {
+          text: 'OK',
+          onPress: () => {
+            setIsEditing(false);
+            setPassword('');
+          }
+        }
+      ]);
 
-      // Simulate API call and delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      // const csrfResponse = await axios.get(...);
-      // const csrfToken = csrfResponse.data.csrfToken;
-
-      // const updateData: any = {...}; // This would include birthDate
-      // if (password.trim()) {...}
-
-      // const response = await axios.put(...);
-
-      // Simulate successful response
-      // if (response.status === 200) {
-        setOriginalEmail(email.trim());
-        Alert.alert(
-          'Éxito',
-          'Perfil actualizado correctamente (simulado)',
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                setIsEditing(false);
-                setPassword('');
-              }
-            }
-          ]
-        );
-      // }
-
-    } catch (error) {
-      console.error('Error al actualizar perfil (simulado):', error);
-      Alert.alert('Error', 'No se pudo actualizar el perfil (simulado)');
+    } catch (error: any) {
+      console.error('Error al actualizar perfil:', error);
+      const msg = error.response?.data?.message || 'No se pudo actualizar el perfil';
+      Alert.alert('Error', msg);
     } finally {
       setIsSaving(false);
     }
@@ -471,20 +472,46 @@ const ProfileScreen = () => {
 
   return (
     <LinearGradient
-      colors={['#026b6b', '#2D353C']} // Updated colors
+      colors={theme.colors.gradientBackground} // Updated to use theme
       style={styles.backgroundImage}
-      start={{ x: 0, y: 0 }} // Updated start point
-      end={{ x: 1, y: 1 }}   // Updated end point
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
     >
       <View style={styles.container}>
         <Header onMenuPress={() => setSidebarOpen(true)} customTitle="Ver Perfil" />
 
         <View style={styles.profileContainer}>
-          <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-            <View style={styles.profileAvatar}>
-              <Text style={styles.profileAvatarText}>{getInitials(fullName)}</Text>
+          <View style={{ alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+            <View style={[styles.profileAvatar, profileImage ? { backgroundColor: 'transparent', borderWidth: 0 } : {}]}>
+              {profileImage ? (
+                <Image source={{ uri: profileImage }} style={styles.profileImage} />
+              ) : (
+                <Text style={styles.profileAvatarText}>{getInitials(fullName)}</Text>
+              )}
             </View>
+
+            {/* Camera Icon Button for Profile Picture */}
+            <TouchableOpacity
+              style={{
+                position: 'absolute',
+                bottom: 0,
+                right: 0,
+                backgroundColor: theme.colors.primary,
+                borderRadius: 20,
+                padding: 8,
+                elevation: 5
+              }}
+              onPress={pickImage}
+              disabled={isUploadingImage}
+            >
+              {isUploadingImage ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Feather name="camera" size={20} color="#fff" />
+              )}
+            </TouchableOpacity>
           </View>
+
           {!isEditing ? (
             <TouchableOpacity style={[styles.editButton, styles.editButtonStyled]} onPress={handleEditPress}>
               <Feather name="edit" size={18} color="#fff" style={{ marginRight: 6 }} />
@@ -531,27 +558,28 @@ const ProfileScreen = () => {
             placeholderTextColor="rgba(255, 255, 255, 0.7)"
           />
 
-          <Text style={styles.label}>Dirección</Text>
-          <TextInput
-            style={styles.input}
-            value={address}
-            onChangeText={setAddress}
-            editable={isEditing}
-            placeholder="Ingresa tu dirección"
-            placeholderTextColor="rgba(255, 255, 255, 0.7)"
-          />
-
           {/* New field: Fecha de Nacimiento */}
           <Text style={styles.label}>Fecha de Nacimiento</Text>
-          <TextInput
-            style={styles.input}
-            value={birthDate}
-            onChangeText={setBirthDate}
-            editable={isEditing}
-            placeholder="AAAA-MM-DD"
-            placeholderTextColor="rgba(255, 255, 255, 0.7)"
-            keyboardType="numbers-and-punctuation" // Suggests numbers and hyphens
-          />
+          <TouchableOpacity onPress={() => isEditing && setShowDatePicker(true)} disabled={!isEditing}>
+            <View pointerEvents="none">
+              <TextInput
+                style={styles.input}
+                value={birthDate}
+                editable={false} // Disable direct text input
+                placeholder="AAAA-MM-DD"
+                placeholderTextColor="rgba(255, 255, 255, 0.7)"
+              />
+            </View>
+          </TouchableOpacity>
+          {showDatePicker && (
+            <DateTimePicker
+              value={birthDate ? new Date(birthDate) : new Date()}
+              mode="date"
+              display="default"
+              onChange={handleDateChange}
+              maximumDate={new Date()}
+            />
+          )}
 
           <View style={styles.phoneSectionContainer}>
             <Text style={styles.phoneSectionTitleText}>Teléfono</Text>

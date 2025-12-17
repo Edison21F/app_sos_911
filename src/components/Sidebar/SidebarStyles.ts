@@ -1,5 +1,6 @@
 import { StyleSheet, Platform, StatusBar, Dimensions } from 'react-native';
 import { normalize, screenWidth } from '../../utils/dimensions';
+import { theme } from '../../theme/theme';
 
 // Constants
 const SIDEBAR_WIDTH = Math.min(screenWidth * 0.8, 300);
@@ -17,51 +18,39 @@ const shadowProps = {
   elevation: 8,
 };
 
-// Color constants - Dark Green Theme
-const COLORS = {
-  primary: '#d4d4d4',      // Blanco suave para textos principales
-  text: '#ffffff',         // Blanco puro para destacados
-  textSecondary: '#a0a0a0', // Gris claro para textos secundarios
-  background: 'rgba(18, 32, 32, 0.95)',  // Verde oscuro semi-transparente
-  backgroundLight: 'rgba(28, 42, 42, 0.98)', // Verde oscuro más claro
-  border: 'rgba(255, 255, 255, 0.1)',    // Bordes sutiles blancos
-  highlight: 'rgba(255, 255, 255, 0.05)', // Highlight sutil para estados activos
-  logout: '#b94141',       // Rojo oscuro más suave
-  overlay: 'rgba(12, 22, 22, 0.85)',     // Overlay verdoso oscuro
-};
-
 export const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: COLORS.overlay,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)', // Darker overlay
     zIndex: 1,
   },
 
   sidebar: {
     position: 'absolute',
-    top: STATUSBAR_HEIGHT,
+    top: 0, // Full height
     left: 0,
     bottom: 0,
     width: SIDEBAR_WIDTH,
-    backgroundColor: COLORS.background,
+    backgroundColor: '#0F0F0F', // Black background
     zIndex: 2,
     ...shadowProps,
     borderRightWidth: 1,
-    borderRightColor: COLORS.border,
+    borderRightColor: theme.colors.border,
   },
 
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: '#0F0F0F',
+    paddingTop: STATUSBAR_HEIGHT,
   },
 
   header: {
     padding: normalize(20),
-    backgroundColor: COLORS.backgroundLight,
+    backgroundColor: '#1A1A1A', // Slightly lighter black
     flexDirection: 'row',
     alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: theme.colors.border,
   },
 
   headerImage: {
@@ -69,9 +58,9 @@ export const styles = StyleSheet.create({
     height: normalize(65),
     marginRight: normalize(15),
     borderRadius: normalize(50),
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    borderWidth: 2,
+    borderColor: theme.colors.primary, // Red border
+    backgroundColor: '#fff',
   },
 
   headerContent: {
@@ -80,14 +69,14 @@ export const styles = StyleSheet.create({
 
   headerText: {
     fontSize: normalize(24),
-    fontWeight: '600',
-    color: COLORS.text,
+    fontWeight: 'bold',
+    color: theme.colors.text,
     letterSpacing: 0.5,
   },
 
   headerSubText: {
     fontSize: normalize(14),
-    color: COLORS.textSecondary,
+    color: theme.colors.textSecondary,
     marginTop: normalize(4),
   },
 
@@ -101,19 +90,22 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: normalize(15),
     paddingHorizontal: normalize(20),
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomWidth: 0,
+    marginBottom: 4,
   },
 
   menuItemActive: {
-    backgroundColor: COLORS.highlight,
+    backgroundColor: 'rgba(255, 75, 75, 0.1)', // Red tint
+    borderLeftWidth: 4,
+    borderLeftColor: theme.colors.primary,
   },
 
   menuText: {
     fontSize: normalize(16),
-    color: COLORS.primary,
+    color: theme.colors.text,
     marginLeft: normalize(15),
     letterSpacing: 0.3,
+    fontWeight: '500',
   },
 
   logoutButton: {
@@ -121,15 +113,15 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: normalize(20),
-    backgroundColor: COLORS.backgroundLight,
+    backgroundColor: '#1A1A1A',
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
+    borderTopColor: theme.colors.border,
   },
 
   logoutText: {
     fontSize: normalize(16),
-    color: COLORS.logout,
+    color: theme.colors.primary, // Red for logout
     marginLeft: normalize(10),
-    fontWeight: '500',
+    fontWeight: 'bold',
   },
 });

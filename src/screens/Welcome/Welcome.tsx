@@ -10,6 +10,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Application from 'expo-application';
 import { Platform } from 'react-native';
 import api from '../../api/api';
+import { theme } from '../../theme/theme';
 
 const getDeviceId = async () => {
   if (Platform.OS === 'android') {
@@ -97,7 +98,7 @@ export default function WelcomeScreen() {
 
   return (
     <LinearGradient
-      colors={['#026b6b', '#2D353C']}
+      colors={theme.colors.gradientBackground}
       start={{ x: 0, y: 1 }}
       end={{ x: 1, y: 0 }}
       style={styles.backgroundGradient}
@@ -110,10 +111,10 @@ export default function WelcomeScreen() {
             resizeMode="contain"
           />
           <Text style={{ ...styles.title, marginTop: 10 }}>
-            <Text style={styles.sosText}>Sos</Text>
-            <Text style={styles.nineElevenText}>911</Text>
+            <Text style={{ ...styles.sosText, color: theme.colors.text }}>Sos</Text>
+            <Text style={{ ...styles.nineElevenText, color: theme.colors.primary }}>911</Text>
           </Text>
-          <Text style={{ ...styles.subtitle, marginTop: 8 }}>Tu app de ayuda de emergencia</Text>
+          <Text style={{ ...styles.subtitle, marginTop: 8, color: theme.colors.textSecondary }}>Tu app de ayuda de emergencia</Text>
         </View>
 
         <View style={{ alignItems: 'center', justifyContent: 'center', marginVertical: 0, marginBottom: 0, marginTop: -20 }}>
@@ -127,7 +128,7 @@ export default function WelcomeScreen() {
               width: 259,
               height: 260,
               borderRadius: 130,
-              backgroundColor: 'white',
+              backgroundColor: 'rgba(255,255,255,0.1)', // Translucent border
               justifyContent: 'center',
               alignItems: 'center',
               position: 'absolute',
@@ -145,10 +146,11 @@ export default function WelcomeScreen() {
                 justifyContent: 'center',
                 alignItems: 'center',
                 zIndex: 2,
+                backgroundColor: theme.colors.primaryDark,
               }}
             >
               <LinearGradient
-                colors={['#FF4D4D', '#FF4D4D']}
+                colors={theme.colors.gradientButton}
                 style={{
                   width: '100%',
                   height: '100%',
@@ -160,18 +162,18 @@ export default function WelcomeScreen() {
                 end={{ x: 1, y: 1 }}
               >
                 <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
-                  <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 70, letterSpacing: 2, textShadowColor: 'rgba(0,0,0,0.15)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 4 }}>SOS</Text>
-                  <Text style={{ color: 'white', fontSize: 18, marginTop: 8, textShadowColor: 'rgba(0,0,0,0.10)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>Presionar 1 vez</Text>
+                  <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 70, letterSpacing: 2, textShadowColor: 'rgba(0,0,0,0.3)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 4 }}>SOS</Text>
+                  <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 18, marginTop: 8 }}>Presionar 1 vez</Text>
                 </View>
               </LinearGradient>
             </TouchableOpacity>
           </Animated.View>
         </View>
 
-        <View style={{ ...styles.inputContainer, marginTop: 40, marginBottom: 10 }}>
+        <View style={{ ...styles.inputContainer, marginTop: 40, marginBottom: 10, backgroundColor: 'transparent', borderWidth: 0, shadowOpacity: 0 }}>
           <TouchableOpacity
             onPress={handleLoginPress}
-            style={styles.loginButton}
+            style={{ ...styles.loginButton, backgroundColor: theme.colors.primary }}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
               <Icon name="login" size={22} color="#fff" style={{ marginRight: 8 }} />
@@ -181,11 +183,11 @@ export default function WelcomeScreen() {
 
           <TouchableOpacity
             onPress={() => navigation.navigate('Register')}
-            style={[styles.loginButton, { backgroundColor: '#2D353C', borderWidth: 1, borderColor: '#fff', marginTop: 10 }]}
+            style={[styles.loginButton, { backgroundColor: 'transparent', borderWidth: 1, borderColor: theme.colors.primary, marginTop: 15 }]}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-              <Icon name="account-plus" size={22} color="#fff" style={{ marginRight: 8 }} />
-              <Text style={[styles.loginButtonText, { color: '#fff' }]}>Registrarse</Text>
+              <Icon name="account-plus" size={22} color={theme.colors.primary} style={{ marginRight: 8 }} />
+              <Text style={[styles.loginButtonText, { color: theme.colors.primary }]}>Registrarse</Text>
             </View>
           </TouchableOpacity>
         </View>

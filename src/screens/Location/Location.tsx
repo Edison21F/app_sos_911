@@ -15,6 +15,7 @@ import SeeLocations from './SeeLocations/SeeLocations';
 import Header from '../../components/Header/Header';
 import CustomSidebar from '../../components/Sidebar/Sidebar';
 import { LinearGradient } from 'expo-linear-gradient';
+import { theme } from '../../theme/theme';
 
 type RootStackParamList = {
   LocationScreen: undefined;
@@ -29,7 +30,7 @@ const LocationScreen = () => {
   const [visibleLocations, setVisibleLocations] = useState<Location[]>([]);
   const [mapReady, setMapReady] = useState(false);
   const mapRef = useRef<MapView | null>(null);
-  
+
   const [currentLocation, setCurrentLocation] = useState<Region>({
     latitude: -0.180653,
     longitude: -78.467834,
@@ -69,7 +70,7 @@ const LocationScreen = () => {
         };
 
         setCurrentLocation(newRegion);
-        
+
         if (mapRef.current && mapReady) {
           mapRef.current.animateToRegion(newRegion, 1000);
         }
@@ -88,7 +89,7 @@ const LocationScreen = () => {
       let location = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
       });
-      
+
       console.log('Nueva ubicación obtenida:', location);
       console.log('Nueva Latitud:', location.coords.latitude);
       console.log('Nueva Longitud:', location.coords.longitude);
@@ -101,7 +102,7 @@ const LocationScreen = () => {
       };
 
       setCurrentLocation(newRegion);
-      
+
       if (mapRef.current && mapReady) {
         mapRef.current.animateToRegion(newRegion, 1000);
       }
@@ -118,13 +119,13 @@ const LocationScreen = () => {
   };
 
   return (
-  <LinearGradient
-  colors={['#026b6b', '#2D353C']} // Updated colors
-  style={styles.backgroundImage}
-  start={{ x: 0, y: 0 }} // Updated start point
-  end={{ x: 1, y: 1 }}   // Updated end point
->
-        
+    <LinearGradient
+      colors={theme.colors.gradientBackground}
+      style={styles.backgroundImage}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+    >
+
       <SafeAreaView style={styles.container}>
         <Header
           onMenuPress={() => setSidebarOpen(true)}
@@ -133,7 +134,7 @@ const LocationScreen = () => {
 
         <View style={styles.content}>
           <View style={styles.mapContainer}>
-            <MapView 
+            <MapView
               provider={PROVIDER_GOOGLE}
               ref={mapRef}
               style={styles.map}
@@ -146,7 +147,7 @@ const LocationScreen = () => {
               showsMyLocationButton={false}
               followsUserLocation={true}
             >
-              <Marker 
+              <Marker
                 coordinate={{
                   latitude: currentLocation.latitude,
                   longitude: currentLocation.longitude
@@ -158,16 +159,16 @@ const LocationScreen = () => {
           </View>
 
           <View style={styles.buttonContainer}>
-            <TouchableOpacity 
-              style={styles.button} 
+            <TouchableOpacity
+              style={styles.button}
               onPress={handleShowCurrentLocation}
             >
               <Ionicons name="locate-outline" size={20} color="white" />
               <Text style={styles.buttonText}>Ver mi ubicación actual</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity 
-              style={styles.buttonSecondary} 
+            <TouchableOpacity
+              style={styles.buttonSecondary}
               onPress={handleShowSavedLocations}
             >
               <Ionicons name="location-outline" size={20} color="white" />
@@ -183,7 +184,7 @@ const LocationScreen = () => {
           onClose={() => setSidebarOpen(false)}
         />
       </SafeAreaView>
-      </LinearGradient>
+    </LinearGradient>
   );
 };
 

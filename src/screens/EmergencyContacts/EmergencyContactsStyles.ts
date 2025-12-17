@@ -1,19 +1,6 @@
 import { StyleSheet, Platform, StatusBar } from 'react-native';
 import { normalize } from '../../utils/dimensions';
-
-export const theme = {
-  colors: {
-    background: '#0f172a',    // Azul oscuro profundo
-    backgroundAlt: '#1e293b', // Azul-gris para contraste
-    card: '#1e293b',          // Tarjetas
-    textPrimary: '#f8fafc',   // Blanco para textos principales
-    textSecondary: '#94a3b8', // Gris claro para secundarios
-    primary: '#38bdf8',       // Azul cielo
-    primaryAlt: '#0ea5e9',    // Azul más oscuro
-    danger: '#ef4444',        // Rojo para eliminar
-    border: '#334155',        // Borde sutil
-  },
-};
+import { theme } from '../../theme/theme';
 
 export const styles = StyleSheet.create({
   container: {
@@ -29,7 +16,7 @@ export const styles = StyleSheet.create({
     paddingBottom: normalize(100),
   },
   contactCard: {
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.card, // Glassmorphism
     borderRadius: normalize(16),
     padding: normalize(12),
     marginBottom: normalize(16),
@@ -61,11 +48,11 @@ export const styles = StyleSheet.create({
     width: normalize(55),
     height: normalize(55),
     borderRadius: normalize(27.5),
-    backgroundColor: '#0891b2',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#fff',
+    borderColor: theme.colors.primary,
   },
   initialsText: {
     fontSize: normalize(18),
@@ -80,11 +67,11 @@ export const styles = StyleSheet.create({
   contactName: {
     fontSize: normalize(17),
     fontWeight: 'bold',
-    color: '#555', // Gris medio para el nombre
+    color: theme.colors.text,
   },
   contactRelation: {
     fontSize: normalize(14),
-    color: '#444',
+    color: theme.colors.textSecondary,
     marginTop: normalize(4),
   },
   contactActions: {

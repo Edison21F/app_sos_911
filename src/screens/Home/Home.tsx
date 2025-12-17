@@ -16,13 +16,15 @@ import {
 } from 'react-native';
 import Svg, { Line, Circle, G } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Phone, Shield, Lock } from 'lucide-react-native';
+import { Phone, Shield, Lock, AlertTriangle } from 'lucide-react-native'; // Added AlertTriangle
 import CustomSidebar from '../../components/Sidebar/Sidebar';
 import Header from '../../components/Header/Header';
 import { styles } from './HomeStyles';
 import { normalize } from '../../utils/dimensions';
 import { HomeScreenProps } from './types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { theme } from '../../theme/theme'; // Import theme
+import LocationService from '../../services/location.service';
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
@@ -35,7 +37,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [cooldownTime, setCooldownTime] = useState(0);
   const buttonScale = new Animated.Value(1);
   const [rotation, setRotation] = useState(0);
-  const animationFrameRef = useRef<number>();
+  const animationFrameRef = useRef<number>(0);
   const pulseAnimValue = useRef(new Animated.Value(1)).current;
   const securityButtonFade = useRef(new Animated.Value(1)).current;
 
@@ -54,19 +56,26 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     };
   }, []);
 
-  // Cargar configuración de auto-login al iniciar
+  // Cargar configuración de auto-login al iniciar y Sync de Ubicación
   useEffect(() => {
-    const loadAutoLoginSetting = async () => {
+    const initApp = async () => {
       try {
         const setting = await AsyncStorage.getItem('autoLoginEnabled');
         if (setting !== null) {
           setAutoLoginEnabled(setting === 'true');
         }
+
+        // Iniciar Sync de Ubicación
+        const userId = await AsyncStorage.getItem('idUsuarioSql'); // Asumiendo este key
+        if (userId) {
+          console.log('[Home] Iniciando sync de ubicación para user:', userId);
+          LocationService.startLocationSync(userId);
+        }
       } catch (error) {
-        console.error('Error loading auto-login setting:', error);
+        console.error('Error initializing app:', error);
       }
     };
-    loadAutoLoginSetting();
+    initApp();
   }, []);
 
   // Controlar la visibilidad del botón de seguridad
@@ -89,7 +98,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   // Efecto para manejar el cooldown
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    
+
     if (isCooldownActive && cooldownTime > 0) {
       interval = setInterval(() => {
         setCooldownTime(prev => {
@@ -101,7 +110,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         });
       }, 1000);
     }
-    
+
     return () => {
       if (interval) clearInterval(interval);
     };
@@ -116,7 +125,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       const newValue = !autoLoginEnabled;
       setAutoLoginEnabled(newValue);
       await AsyncStorage.setItem('autoLoginEnabled', newValue.toString());
-      
+
       if (!newValue) {
         // Solo mostrar mensaje, NO eliminar clienteId en la sesión actual
         // Los valores se eliminarán cuando la app se reinicie y detecte que auto-login está desactivado
@@ -149,15 +158,15 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Shield size={normalize(32)} color="#00ACAC" />
+              <Shield size={normalize(32)} color={theme.colors.primary} />
               <Text style={styles.modalTitle}>Seguridad de Sesión</Text>
             </View>
-            
+
             <View style={styles.modalBody}>
               <Text style={styles.modalDescription}>
                 Controla cómo inicias sesión en la aplicación
               </Text>
-              
+
               <View style={styles.switchContainer}>
                 <View style={styles.switchRow}>
                   <View style={styles.switchLabelContainer}>
@@ -167,19 +176,19 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                   <Switch
                     value={autoLoginEnabled}
                     onValueChange={handleAutoLoginToggle}
-                    thumbColor={autoLoginEnabled ? '#00ACAC' : '#f4f3f4'}
-                    trackColor={{ false: '#767577', true: '#00ACAC80' }}
+                    thumbColor={autoLoginEnabled ? theme.colors.primary : '#f4f3f4'}
+                    trackColor={{ false: '#767577', true: `${theme.colors.primary}80` }}
                   />
                 </View>
-                
+
                 <Text style={styles.switchDescription}>
-                  {autoLoginEnabled 
-                    ? 'La app recordará tu sesión para accesos futuros' 
+                  {autoLoginEnabled
+                    ? 'La app recordará tu sesión para accesos futuros'
                     : 'Deberás iniciar sesión manualmente cada vez'}
                 </Text>
               </View>
             </View>
-            
+
             <View style={styles.modalFooter}>
               <TouchableOpacity
                 style={styles.modalCloseButton}
@@ -204,10 +213,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         activeOpacity={0.8}
       >
         <LinearGradient
-           colors={['#2ECC71', '#28B463']} // <--- CAMBIO AQUÍ
+          colors={[theme.colors.success, '#1E8449']}
           style={styles.resolveGradient}
-           start={{ x: 0, y: 0 }} // <--- CAMBIO AQUÍ
-           end={{ x: 1, y: 1 }}   // <--- CAMBIO AQUÍ
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
         >
           <Text style={styles.resolveText}>Resuelto</Text>
         </LinearGradient>
@@ -246,19 +255,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       return; // No hacer nada si está en cooldown
     }
 
-    // Mostrar modal de alerta activa
-    setIsAlertModalOpen(true);
-    setIsButtonActive(true);
-    
-    // Cerrar modal después de 3 segundos
-    setTimeout(() => {
-      setIsAlertModalOpen(false);
-      setIsButtonActive(false);
-      
-      // Activar cooldown de 30 segundos
-      setIsCooldownActive(true);
-      setCooldownTime(30); // 30 segundos
-    }, 3000);
+    // Navegar a la pantalla de selección de tipo de emergencia
+    navigation.navigate('EmergencySelection');
   };
 
   // Función para formatear el tiempo del cooldown
@@ -275,44 +273,48 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         visible={isAlertModalOpen}
         transparent={true}
         animationType="fade"
-        onRequestClose={() => {}}
+        onRequestClose={() => { }}
       >
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { 
-            backgroundColor: 'rgba(2, 107, 107, 0.95)', // Fondo similar al de la app
+          <View style={[styles.modalContent, {
+            backgroundColor: 'rgba(20, 0, 0, 0.95)', // Dark red background
             borderRadius: 20,
             padding: 0,
             alignItems: 'center',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 10 },
-            shadowOpacity: 0.25,
+            shadowColor: theme.colors.primary,
+            shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: 0.5,
             shadowRadius: 20,
             elevation: 10,
             width: '90%',
-            height: '70%'
+            height: '70%',
+            borderWidth: 1,
+            borderColor: theme.colors.primaryDark
           }]}>
-            
+
             {/* Título "Alerta activa" */}
-            <Text style={{ 
-              color: '#FFFFFF',
+            <Text style={{
+              color: theme.colors.primary,
               fontSize: 28,
               fontWeight: 'bold',
               marginTop: 30,
               marginBottom: 30,
-              textAlign: 'center'
+              textAlign: 'center',
+              textTransform: 'uppercase',
+              letterSpacing: 2
             }}>
               Alerta activa
             </Text>
-            
+
             {/* Contenedor de los contactos con líneas */}
-            <View style={{ 
+            <View style={{
               flex: 1,
               width: '100%',
               position: 'relative',
               alignItems: 'center',
               justifyContent: 'center'
             }}>
-              
+
               {/* Elementos futurísticos similares a la pantalla principal */}
               <View style={{ position: 'absolute', width: '100%', height: '100%' }}>
                 {/* Círculos concéntricos */}
@@ -325,17 +327,18 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                       height: 200 * scale,
                       borderRadius: 100 * scale,
                       borderWidth: 1.5,
-                      borderColor: '#FFFFFF',
+                      borderColor: theme.colors.primaryDark,
                       borderStyle: 'dashed',
                       left: '50%',
                       top: '50%',
                       marginLeft: -100 * scale,
                       marginTop: -100 * scale,
+                      opacity: 0.5
                     }}
                   />
                 ))}
               </View>
-              
+
               {/* Contactos posicionados */}
               {people.map((person, index) => {
                 const angle = (index * 360) / people.length;
@@ -343,7 +346,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 const radius = 80;
                 const x = radius * Math.cos(angleInRadians);
                 const y = radius * Math.sin(angleInRadians);
-                
+
                 return (
                   <View
                     key={person.id}
@@ -356,14 +359,14 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                       ]
                     }}
                   >
-                    <Image 
-                      source={person.image} 
+                    <Image
+                      source={person.image}
                       style={{
                         width: 50,
                         height: 50,
                         borderRadius: 25,
                         borderWidth: 2,
-                        borderColor: '#FFFFFF'
+                        borderColor: theme.colors.primary
                       }}
                     />
                     <Text style={{
@@ -377,16 +380,20 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                   </View>
                 );
               })}
-              
+
               {/* Botón SOS central */}
               <View style={{
                 width: 80,
                 height: 80,
                 borderRadius: 40,
-                backgroundColor: '#FF4D4D',
+                backgroundColor: theme.colors.primary,
                 justifyContent: 'center',
                 alignItems: 'center',
-                zIndex: 10
+                zIndex: 10,
+                shadowColor: theme.colors.primary,
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: 0.8,
+                shadowRadius: 15
               }}>
                 <Text style={{
                   color: '#FFFFFF',
@@ -396,13 +403,13 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                   SOS
                 </Text>
               </View>
-              
+
               {/* Líneas conectando el centro con los contactos */}
               {people.map((person, index) => {
                 const angle = (index * 360) / people.length;
                 const angleInRadians = (angle * Math.PI) / 180;
                 const radius = 80;
-                
+
                 return (
                   <View
                     key={`line-${person.id}`}
@@ -410,7 +417,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                       position: 'absolute',
                       width: radius,
                       height: 2,
-                      backgroundColor: '#FFFFFF',
+                      backgroundColor: theme.colors.primary,
                       zIndex: 5,
                       transform: [
                         { rotate: `${angle}deg` },
@@ -420,9 +427,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                   />
                 );
               })}
-              
+
             </View>
-            
+
             {/* Mensaje de confirmación */}
             <Text style={{
               color: '#FFFFFF',
@@ -431,9 +438,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               marginBottom: 30,
               paddingHorizontal: 20
             }}>
-              Tus contactos de emergencia han sido notificados con tu ubicación actual
+              Tus contactos de emergencia han sido notificados
             </Text>
-            
+
           </View>
         </View>
       </Modal>
@@ -462,8 +469,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               cx={centerX}
               cy={centerY}
               r={maxRadius * scale}
-              stroke="#FFFFFF" // Blanco puro
-              strokeWidth="1.5" // Un poco más grueso para más visibilidad
+              stroke="rgba(255, 75, 75, 0.2)" // Red tint
+              strokeWidth="1.5"
               fill="none"
               strokeDasharray={`${normalize(5)},${normalize(15)}`}
             />
@@ -479,7 +486,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               const radius = maxRadius * person.distance;
               const x = centerX + radius * Math.cos(angleInRadians);
               const y = centerY + radius * Math.sin(angleInRadians);
-              const opacity = 1; // Máxima visibilidad
+              const opacity = 1;
 
               return (
                 <G key={`connection-${person.id}`}>
@@ -488,7 +495,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                     y1={centerY}
                     x2={x}
                     y2={y}
-                    stroke="#FFFFFF"
+                    stroke={theme.colors.primary}
                     strokeWidth="2.5"
                     opacity={opacity}
                   />
@@ -502,7 +509,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                         cx={circleX}
                         cy={circleY}
                         r="3.5"
-                        fill="#FFFFFF"
+                        fill={theme.colors.primary}
                         opacity={opacity}
                       />
                     );
@@ -513,7 +520,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                     cy={y}
                     r="7"
                     fill="none"
-                    stroke="#FFFFFF"
+                    stroke={theme.colors.primary}
                     strokeWidth="2.5"
                     opacity={opacity}
                   />
@@ -527,7 +534,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           cx={centerX}
           cy={centerY}
           r={normalize(20)}
-          fill="rgba(255,255,255,0.35)" // Más blanco en el centro
+          fill="rgba(255, 255, 255, 0.05)"
         />
       </Svg>
     );
@@ -569,7 +576,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       >
         <Animated.View style={{ transform: [{ scale: pulseAnimValue }] }}>
           <LinearGradient
-            colors={isCooldownActive ? ['#95A5A6', '#7F8C8D'] : ['#FF4D4D', '#FF4D4D']}
+            colors={isCooldownActive ? ['#95A5A6', '#7F8C8D'] : theme.colors.gradientButton}
             style={[
               styles.innerButton,
               isButtonActive && styles.innerButtonActive
@@ -637,12 +644,12 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   };
 
   return (
-  <LinearGradient
-  colors={['#026b6b', '#2D353C']} // These are the correct colors
-  style={styles.backgroundImage}
-  start={{ x: 0, y: 0 }}         // Corrected start point
-  end={{ x: 1, y: 1 }}           // Corrected end point
->
+    <LinearGradient
+      colors={theme.colors.gradientBackground}
+      style={styles.backgroundImage}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+    >
       <SafeAreaView style={styles.container}>
         <Header onMenuPress={() => setSidebarOpen(true)} />
 
@@ -673,13 +680,21 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             {renderNearbyPeople()}
           </View>
 
-          {/* Botón "Resuelto" eliminado según solicitud del usuario */}
+          {/* Botón de llamada al 911 */}
           <TouchableOpacity
             style={styles.emergencyTag}
             onPress={handleEmergencyCall}
           >
-            <Phone size={normalize(26)} color="#FF0000FF" />
+            <Phone size={normalize(26)} color={theme.colors.primary} />
             <Text style={styles.emergencyText}>911</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.nearbyValuesButton}
+            onPress={() => navigation.navigate('NearbyAlerts')}
+          >
+            <AlertTriangle size={normalize(20)} color={theme.colors.text} style={{ marginRight: 8 }} />
+            <Text style={styles.nearbyValuesText}>Alertas Cercanas</Text>
           </TouchableOpacity>
         </View>
 
@@ -698,14 +713,14 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             onPress={() => setIsSecurityModalOpen(true)}
             activeOpacity={0.8}
           >
-            <Shield size={normalize(20)} color="#FF8C00" />
+            <Shield size={normalize(20)} color={theme.colors.primary} />
             <Text style={styles.securityButtonText}>Seguridad de Sesión</Text>
           </TouchableOpacity>
         </Animated.View>
 
         {/* Modal de configuración de seguridad */}
         {renderSecurityModal()}
-        
+
         {/* Modal de alerta activa */}
         {renderAlertModal()}
       </SafeAreaView>

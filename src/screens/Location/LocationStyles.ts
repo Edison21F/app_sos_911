@@ -1,5 +1,6 @@
 import { StyleSheet, Platform, StatusBar } from 'react-native';
 import { normalize } from '../../utils/dimensions';
+import { theme } from '../../theme/theme';
 
 export const styles = StyleSheet.create({
   backgroundImage: {
@@ -28,10 +29,12 @@ export const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 4,
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   map: {
     width: '100%',
@@ -47,14 +50,14 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#00ACAC',
+    backgroundColor: theme.colors.primary, // Red Button
     paddingVertical: normalize(12),
     paddingHorizontal: normalize(20),
     borderRadius: normalize(10),
     marginBottom: normalize(10),
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
+    shadowColor: theme.colors.primary,
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
     elevation: 5,
     width: normalize(230),
   },
@@ -62,20 +65,21 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#D64545',
+    backgroundColor: theme.colors.primaryDark, // Darker Red
     paddingVertical: normalize(12),
     paddingHorizontal: normalize(20),
     borderRadius: normalize(10),
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
+    shadowColor: theme.colors.primaryDark,
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
     elevation: 5,
     width: normalize(230),
   },
   buttonText: {
-    color: 'white',
+    color: '#fff',
     fontSize: normalize(16),
     marginLeft: normalize(8),
     textAlign: 'center',
+    fontWeight: 'bold',
   },
 });

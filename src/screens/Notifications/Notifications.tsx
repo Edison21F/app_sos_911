@@ -13,54 +13,22 @@ import {
   TouchableOpacity,
   Modal,
   TextInput,
+  ActivityIndicator,
+  RefreshControl
 } from 'react-native';
 import { ShieldAlert, Siren, Bell, XCircle, MapPin } from 'lucide-react-native'; // Íconos para las acciones
 import CustomSidebar from '../../components/Sidebar/Sidebar'; // Sidebar personalizado
 import Header from '../../components/Header/Header'; // Encabezado de la pantalla
 import { styles } from './NotificationsStyles'; // Estilos de la pantalla
+import { theme } from '../../theme/theme';
 import { Notification, NotificationsProps } from './types'; // Tipos de datos
 import { normalize } from '../../utils/dimensions'; // Función para normalizar tamaños en distintas pantallas
 import MapView, { Marker } from 'react-native-maps'; // Agrega esto si tienes react-native-maps instalado
 import { LinearGradient } from 'expo-linear-gradient';
-
-// Cambiar el orden de las notificaciones y el texto de Pablo Vargas
-const initialNotifications: Notification[] = [
-  {
-    id: '2',
-    title: 'Alerta recibida',
-    description: 'Contacto emergencia: Pablo Vargas - Ayuda urgente.',
-    time: 'Hace 1 hora',
-    type: 'clientes',
-    alertType: undefined, // No calificada
-    status: 'pending',
-    location: { latitude: -0.181, longitude: -78.468 },
-    responseComment: '',
-  },
-  {
-    id: '1',
-    title: 'Alerta recibida',
-    description: 'Familia: Me caí de la moto.',
-    time: 'Hace 30 minutos',
-    type: 'grupo',
-    group: 'Comunidad San Jose',
-    alertType: undefined, // No calificada
-    status: 'pending',
-    location: { latitude: -0.180653, longitude: -78.467834 },
-    responseComment: '',
-  },
-  {
-    id: '3',
-    title: 'Alerta recibida',
-    description: 'Leo Perez: Apreté mal el botón.',
-    time: 'Hace 1 hora',
-    type: 'grupo',
-    group: 'Comunidad San Jose',
-    alertType: undefined, // No calificada
-    status: 'pending',
-    location: { latitude: -0.182, longitude: -78.469 },
-    responseComment: '',
-  },
-];
+import api from '../../api/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 // Colores suaves y adaptados al fondo
 const alertConfig = {
@@ -92,12 +60,141 @@ const alertConfig = {
     buttonColor: { backgroundColor: '#888' },
     label: 'Sin calificar',
   },
+  // Default fallback
+  CREADA: {
+    icon: <Bell size={normalize(24)} color="#888" />,
+    color: { backgroundColor: '#e5e7eb' },
+    textColor: { color: '#333', fontWeight: 'bold' as 'bold' },
+    buttonColor: { backgroundColor: '#888' },
+    label: 'Nueva',
+  },
+  ATENDIDA: {
+    icon: <ShieldAlert size={normalize(24)} color="#fff" />,
+    color: { backgroundColor: '#4EC9B0' },
+    textColor: { color: '#4EC9B0', fontWeight: 'bold' as 'bold' },
+    buttonColor: { backgroundColor: '#399E8A' },
+    label: 'Atendida',
+  }
+
+};
+
+
+// Componente extraído para manejar los Hooks correctamente
+const NotificationCard: React.FC<{
+  notification: Notification;
+  onDelete: (id: string) => void;
+  onMapPress: (location: { latitude: number; longitude: number }) => void;
+  onCalificarPress: (notification: Notification) => void;
+}> = ({ notification, onDelete, onMapPress, onCalificarPress }) => {
+  const config = alertConfig[notification.status || 'pending'] || alertConfig['pending'];
+  const headerText = 'Alerta de Seguridad';
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (notification.status === 'pending') {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.009,
+            duration: 700,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 700,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    } else {
+      pulseAnim.setValue(1);
+    }
+  }, [notification.status]);
+
+  return (
+    <TouchableWithoutFeedback
+      key={notification.id}
+      onLongPress={() => onDelete(notification.id)}
+    >
+      {notification.status === 'pending' ? (
+        <Animated.View style={[styles.cardContainer, { transform: [{ scale: pulseAnim }], marginBottom: 10 }]}>
+          <View style={{ flexDirection: 'row', width: '100%', height: '100%' }}>
+            <View style={[styles.sideBar, config.color]}>{config.icon}</View>
+            <View style={styles.cardContent}>
+              <View style={styles.notificationHeader}>
+                <Text style={styles.communityText}>{headerText}</Text>
+                <Text style={styles.timeText}>{notification.time}</Text>
+              </View>
+              <View style={styles.notificationContentWeb}>
+                <View style={styles.notificationInfo}>
+                  <Text style={[styles.notificationTitle, config.textColor]}>{notification.title}</Text>
+                  <Text style={styles.notificationDescription}>{notification.description}</Text>
+                  {notification.responseComment ? (
+                    <Text style={{ marginTop: 6, color: '#888', fontStyle: 'italic' }}>{notification.responseComment}</Text>
+                  ) : null}
+                </View>
+                <Image source={require('../../assets/noti.jpg')} style={styles.profileImage} />
+              </View>
+              <View style={[styles.notificationActions, { flexDirection: 'row', gap: 8 }]}>
+                <TouchableOpacity
+                  style={[styles['actionButton'], { backgroundColor: '#00ACAC', flex: 1 }]}
+                  onPress={() => onMapPress(notification.location)}
+                >
+                  <MapPin size={normalize(18)} color="#fff" style={{ marginRight: normalize(6) }} />
+                  <Text style={styles.actionButtonText}>Ver ubicación</Text>
+                </TouchableOpacity>
+                {notification.status === 'pending' && (
+                  <TouchableOpacity
+                    style={[styles['actionButton'], config.buttonColor, { flex: 1 }]}
+                    onPress={() => onCalificarPress(notification)}
+                  >
+                    <Text style={styles.actionButtonText}>Calificar</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          </View>
+        </Animated.View>
+      ) : (
+        <View style={[styles.cardContainer, { marginBottom: 10 }]}>
+          <View style={{ flexDirection: 'row', width: '100%', height: '100%' }}>
+            <View style={[styles.sideBar, config.color]}>{config.icon}</View>
+            <View style={styles.cardContent}>
+              <View style={styles.notificationHeader}>
+                <Text style={styles.communityText}>{headerText}</Text>
+                <Text style={styles.timeText}>{notification.time}</Text>
+              </View>
+              <View style={styles.notificationContentWeb}>
+                <View style={styles.notificationInfo}>
+                  <Text style={[styles.notificationTitle, config.textColor]}>{notification.title}</Text>
+                  <Text style={styles.notificationDescription}>{notification.description}</Text>
+                  {notification.responseComment ? (
+                    <Text style={{ marginTop: 6, color: '#888', fontStyle: 'italic' }}>{notification.responseComment}</Text>
+                  ) : null}
+                </View>
+                <Image source={require('../../assets/noti.jpg')} style={styles.profileImage} />
+              </View>
+              <View style={[styles.notificationActions, { flexDirection: 'row', gap: 8 }]}>
+                <TouchableOpacity
+                  style={[styles['actionButton'], { backgroundColor: '#00ACAC', flex: 1 }]}
+                  onPress={() => onMapPress(notification.location)}
+                >
+                  <MapPin size={normalize(18)} color="#fff" style={{ marginRight: normalize(6) }} />
+                  <Text style={styles.actionButtonText}>Ver ubicación</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </View>
+      )}
+    </TouchableWithoutFeedback>
+  );
 };
 
 // Definimos el componente principal de la pantalla de notificaciones
 const NotificationsScreen: React.FC<NotificationsProps> = ({ navigation }) => {
   // Estado que almacena las notificaciones
-  const [notifications, setNotifications] = useState<Notification[]>(initialNotifications);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   // Estado que controla la apertura del menú lateral
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [showMap, setShowMap] = useState(false);
@@ -109,6 +206,51 @@ const NotificationsScreen: React.FC<NotificationsProps> = ({ navigation }) => {
   const [mapLocation, setMapLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   // Estado para el mensaje personalizado
   const [calificacionMensaje, setCalificacionMensaje] = useState('');
+
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchNotifications = async () => {
+    try {
+      const clienteId = await AsyncStorage.getItem('clienteId');
+      if (!clienteId) return;
+
+      const response = await api.get(`/alertas/notificaciones/${clienteId}`);
+      if (response.data.success) {
+        // Mapear datos del backend al formato de la UI
+        const backendData = response.data.data.map((alerta: any) => ({
+          id: alerta._id,
+          title: `Alerta: ${alerta.tipo}`,
+          description: alerta.detalles || 'Sin detalles',
+          time: alerta.fecha_creacion ? format(new Date(alerta.fecha_creacion), "dd MMMM, h:mm a", { locale: es }) : 'Reciente',
+          type: 'clientes', // Asumimos contacto individual por ahora
+          status: 'pending', // Por defecto pending hasta que la UI maneje estados complejos
+          alertType: undefined,
+          location: {
+            latitude: alerta.ubicacion?.latitud || 0,
+            longitude: alerta.ubicacion?.longitud || 0
+          },
+          responseComment: ''
+        }));
+        setNotifications(backendData);
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchNotifications();
+  };
+
 
   // Función para confirmar la eliminación de una notificación
   const confirmDelete = (id: string) => {
@@ -146,12 +288,12 @@ const NotificationsScreen: React.FC<NotificationsProps> = ({ navigation }) => {
       prev.map((n) =>
         n.id === selectedNotification.id
           ? {
-              ...n,
-              status: calificacionTipo,
-              alertType: calificacionTipo,
-              title: `Alerta : ${calificacionTipo === 'unnecessary' ? 'Innecesaria' : calificacionTipo.toUpperCase()}`,
-              responseComment: calificacionMensaje || `Respondido: ${calificacionTipo === 'unnecessary' ? 'Innecesaria' : calificacionTipo.toUpperCase()}`,
-            }
+            ...n,
+            status: calificacionTipo,
+            alertType: calificacionTipo,
+            title: `Alerta : ${calificacionTipo === 'unnecessary' ? 'Innecesaria' : calificacionTipo.toUpperCase()}`,
+            responseComment: calificacionMensaje || `Respondido: ${calificacionTipo === 'unnecessary' ? 'Innecesaria' : calificacionTipo.toUpperCase()}`,
+          }
           : n
       )
     );
@@ -162,141 +304,37 @@ const NotificationsScreen: React.FC<NotificationsProps> = ({ navigation }) => {
     setCalificacionStep('select');
   };
 
-  // Función que renderiza cada tarjeta de notificación
-  const renderNotificationCard = (notification: Notification) => {
-    const config = alertConfig[notification.status || 'pending'];
-    const headerText = notification.type === 'grupo' ? notification.group || 'Comunidad' : 'Contacto: Pablo Vargas';
-
-    // Animación pulse para toda la tarjeta si está pendiente
-    const pulseAnim = useRef(new Animated.Value(1)).current;
-    useEffect(() => {
-      if (notification.status === 'pending') {
-        Animated.loop(
-          Animated.sequence([
-            Animated.timing(pulseAnim, {
-              toValue: 1.009, // Más sutil aún (0.9% más grande)
-              duration: 700,
-              useNativeDriver: true,
-            }),
-            Animated.timing(pulseAnim, {
-              toValue: 1,
-              duration: 700,
-              useNativeDriver: true,
-            }),
-          ])
-        ).start();
-      } else {
-        pulseAnim.setValue(1);
-      }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [notification.status]);
-
-    return (
-      <TouchableWithoutFeedback
-        key={notification.id}
-        onLongPress={() => confirmDelete(notification.id)}
-      >
-        {notification.status === 'pending' ? (
-          <Animated.View style={[styles.cardContainer, { transform: [{ scale: pulseAnim }] }]}> 
-            {/* Barra lateral de color e ícono */}
-            <View style={[styles.sideBar, config.color]}>{config.icon}</View>
-            {/* Cuerpo de la tarjeta */}
-            <View style={styles.cardContent}>
-              <View style={styles.notificationHeader}>
-                <Text style={styles.communityText}>{headerText}</Text>
-                <Text style={styles.timeText}>{notification.time}</Text>
-              </View>
-              <View style={styles.notificationContentWeb}>
-                <View style={styles.notificationInfo}>
-                  <Text style={[styles.notificationTitle, config.textColor]}>{notification.title}</Text>
-                  <Text style={styles.notificationDescription}>{notification.description}</Text>
-                  {/* Comentario de respuesta si ya fue calificada */}
-                  {notification.responseComment && (
-                    <Text style={{ marginTop: 6, color: '#888', fontStyle: 'italic' }}>{notification.responseComment}</Text>
-                  )}
-                </View>
-                <Image
-                  source={require('../../assets/noti.jpg')}
-                  style={styles.profileImage}
-                />
-              </View>
-              <View style={[styles.notificationActions, { flexDirection: 'row', gap: 8 }]}> 
-                {/* Siempre mostrar los botones para ver ubicación y calificar */}
-                <TouchableOpacity
-                  style={[styles['actionButton'], { backgroundColor: '#00ACAC', flex: 1 }]}
-                  onPress={() => setMapLocation(notification.location)}
-                >
-                  <MapPin size={normalize(18)} color="#fff" style={{ marginRight: normalize(6) }} />
-                  <Text style={styles.actionButtonText}>Ver ubicación</Text>
-                </TouchableOpacity>
-                {notification.status === 'pending' ? (
-                  <TouchableOpacity
-                    style={[styles['actionButton'], config.buttonColor, { flex: 1 }]}
-                    onPress={() => handleCalificar(notification)}
-                  >
-                    <Text style={styles.actionButtonText}>Calificar</Text>
-                  </TouchableOpacity>
-                ) : null}
-              </View>
-            </View>
-          </Animated.View>
-        ) : (
-          <View style={styles.cardContainer}>
-            {/* Barra lateral de color e ícono */}
-            <View style={[styles.sideBar, config.color]}>{config.icon}</View>
-            {/* Cuerpo de la tarjeta */}
-            <View style={styles.cardContent}>
-              <View style={styles.notificationHeader}>
-                <Text style={styles.communityText}>{headerText}</Text>
-                <Text style={styles.timeText}>{notification.time}</Text>
-              </View>
-              <View style={styles.notificationContentWeb}>
-                <View style={styles.notificationInfo}>
-                  <Text style={[styles.notificationTitle, config.textColor]}>{notification.title}</Text>
-                  <Text style={styles.notificationDescription}>{notification.description}</Text>
-                  {notification.responseComment && (
-                    <Text style={{ marginTop: 6, color: '#888', fontStyle: 'italic' }}>{notification.responseComment}</Text>
-                  )}
-                </View>
-                <Image
-                  source={require('../../assets/noti.jpg')}
-                  style={styles.profileImage}
-                />
-              </View>
-              <View style={[styles.notificationActions, { flexDirection: 'row', gap: 8 }]}> 
-                <TouchableOpacity
-                  style={[styles['actionButton'], { backgroundColor: '#00ACAC', flex: 1 }]}
-                  onPress={() => setMapLocation(notification.location)}
-                >
-                  <MapPin size={normalize(18)} color="#fff" style={{ marginRight: normalize(6) }} />
-                  <Text style={styles.actionButtonText}>Ver ubicación</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        )}
-      </TouchableWithoutFeedback>
-    );
-  };
-
   return (
-     <LinearGradient
-     colors={['#026b6b', '#2D353C']} // Updated colors
-     style={styles.backgroundImage}
-     start={{ x: 0, y: 0 }} // Updated start point
-     end={{ x: 1, y: 1 }}   // Updated end point
-   >
+    <LinearGradient
+      colors={theme.colors.gradientBackground} // Updated colors
+      style={styles.backgroundImage}
+      start={{ x: 0, y: 0 }} // Updated start point
+      end={{ x: 1, y: 1 }}   // Updated end point
+    >
       <SafeAreaView style={styles.container}>
-        
+
         {/* Encabezado de la pantalla con botón para abrir el menú lateral */}
         <Header onMenuPress={() => setSidebarOpen(true)} customTitle="Notificaciones" />
 
         {/* Listado de notificaciones */}
-        <ScrollView style={styles.content}>
-          {notifications.length > 0 ? (
-            notifications.map(renderNotificationCard) // Renderiza cada tarjeta de notificación
+        <ScrollView
+          style={styles.content}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#fff" />}
+        >
+          {loading ? (
+            <ActivityIndicator size="large" color="#FF9E5D" style={{ marginTop: 50 }} />
+          ) : notifications.length > 0 ? (
+            notifications.map((item) => (
+              <NotificationCard
+                key={item.id}
+                notification={item}
+                onDelete={confirmDelete}
+                onMapPress={setMapLocation}
+                onCalificarPress={handleCalificar}
+              />
+            ))
           ) : (
-            <Text style={{ textAlign: 'center', color: '#888', marginTop: 40 }}>No hay notificaciones</Text> // Mensaje si no hay notificaciones
+            <Text style={{ textAlign: 'center', color: '#ccc', marginTop: 40 }}>No tienes nuevas notificaciones</Text>
           )}
         </ScrollView>
 
@@ -400,7 +438,7 @@ const NotificationsScreen: React.FC<NotificationsProps> = ({ navigation }) => {
         </Modal>
 
       </SafeAreaView>
-     </LinearGradient>
+    </LinearGradient>
   );
 };
 

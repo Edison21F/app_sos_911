@@ -25,7 +25,7 @@ export type RootStackParamList = {
   Register: undefined;
   Home: undefined;
   Groups: undefined;
-  GroupChat: { 
+  GroupChat: {
     group: Group;
   };
   EmergencyContacts: undefined;
@@ -33,13 +33,16 @@ export type RootStackParamList = {
   Settings: undefined;
   Notifications: undefined;
   // Corrected ContactDetails to include updateContacts
-  ContactDetails: { contact: Contact; updateContacts: (updatedContact: Contact | null, type: 'add' | 'edit' | 'delete') => void; };
-  // Corrected AddContact to include updateContacts
-  AddContact: { updateContacts: (newContact: Contact, type: 'add' | 'edit' | 'delete') => void; };
+  ContactDetails: { contact: Contact };
+  AddContact: undefined;
   EditContact: { contactId: string }; // Assuming this will be used for a separate edit screen if needed
   Location: undefined;
   Information: undefined;
   AlertHistory: undefined;
+  EmergencySelection: undefined;
+  ActiveEmergency: { type: { id: string, label: string, color: string, priority: string } };
+  EmergencyAlert: { alertId: string, senderName: string, type: string };
+  NearbyAlerts: undefined;
 };
 
 // Tipos de navegación específicos para cada pantalla

@@ -26,7 +26,7 @@ type ContactDetailsProps = {
 };
 
 const ContactDetailsScreen: React.FC<ContactDetailsProps> = ({ route, navigation }) => {
-  const { contact, updateContacts } = route.params; // Destructure updateContacts
+  const { contact } = route.params;
   const [modalVisible, setModalVisible] = useState(false);
   const [editedContact, setEditedContact] = useState(contact);
   const [isSidebarOpen, setSidebarOpen] = useState(false); // This seems unused in this component, but keeping it for consistency.
@@ -38,7 +38,7 @@ const ContactDetailsScreen: React.FC<ContactDetailsProps> = ({ route, navigation
   }, [contact]);
 
   const handleEdit = () => setModalVisible(true);
-  
+
   const handleSave = async () => {
     if (!editedContact.nombre.trim() || !editedContact.telefono.trim()) {
       Alert.alert('Error', 'Por favor, completa todos los campos obligatorios.');
@@ -47,36 +47,33 @@ const ContactDetailsScreen: React.FC<ContactDetailsProps> = ({ route, navigation
 
     try {
       setLoading(true);
-      
+
       // Simulate API call delay
       setTimeout(() => {
         // No actual axios call
         // const csrfResponse = await axios.get('http://192.168.1.31:9000/csrf-token');
         // const csrfToken = csrfResponse.data.csrfToken;
-        
+
         const updatedData = {
           ...contact,
           nombre: editedContact.nombre,
           telefono: editedContact.telefono,
           descripcion: editedContact.descripcion,
         };
-        
+
         // Simulate successful update
         setEditedContact(updatedData);
-        
-        // Call the passed function to update contacts in the parent (EmergencyContactsScreen)
-        if (updateContacts) {
-          updateContacts(updatedData, 'edit');
-        }
+
+
 
         setModalVisible(false);
         Alert.alert('Éxito', 'Contacto actualizado correctamente');
-        
+
         // Regresar a la pantalla anterior automáticamente
         navigation.goBack();
         setLoading(false);
       }, 1000); // Simulate network delay
-      
+
     } catch (error: any) {
       console.error('Error al actualizar contacto (simulado):', error);
       Alert.alert('Error', 'No se pudo actualizar el contacto (simulado)');
@@ -96,11 +93,11 @@ const ContactDetailsScreen: React.FC<ContactDetailsProps> = ({ route, navigation
 
   return (
     <LinearGradient
-         colors={["#026b6b", "#2D353C"]}
-         style={styles.backgroundImage}
-         start={{ x: 0, y: 0 }}
-         end={{ x: 1, y: 1 }}
-       >
+      colors={["#026b6b", "#2D353C"]}
+      style={styles.backgroundImage}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+    >
 
       <SafeAreaView style={styles.container}>
         <Header
@@ -128,11 +125,11 @@ const ContactDetailsScreen: React.FC<ContactDetailsProps> = ({ route, navigation
       {/* Modal de Edición */}
       <Modal visible={modalVisible} animationType="slide">
         <LinearGradient
-             colors={["#026b6b", "#2D353C"]}
-             style={styles.backgroundImage}
-             start={{ x: 0, y: 0 }}
-             end={{ x: 1, y: 1 }}
-           >
+          colors={["#026b6b", "#2D353C"]}
+          style={styles.backgroundImage}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
           <SafeAreaView style={styles.modalContainer}>
 
             <View style={styles.modalContent}>
@@ -169,8 +166,8 @@ const ContactDetailsScreen: React.FC<ContactDetailsProps> = ({ route, navigation
                 placeholder="Descripción"
               />
 
-              <TouchableOpacity 
-                style={[styles.saveButton, loading && { opacity: 0.7 }]} 
+              <TouchableOpacity
+                style={[styles.saveButton, loading && { opacity: 0.7 }]}
                 onPress={handleSave}
                 disabled={loading}
               >
@@ -184,7 +181,7 @@ const ContactDetailsScreen: React.FC<ContactDetailsProps> = ({ route, navigation
           </SafeAreaView>
         </LinearGradient>
       </Modal>
-      </LinearGradient>
+    </LinearGradient>
   );
 };
 

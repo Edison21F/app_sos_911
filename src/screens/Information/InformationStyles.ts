@@ -1,19 +1,8 @@
 import { StyleSheet, Platform, StatusBar } from "react-native";
 import { normalize } from "../../utils/dimensions";
+import { theme } from "../../theme/theme";
 
-export const theme = {
-    colors: {
-        background: '#026b6b',
-        backgroundAlt: '#2D353C',
-        card: 'rgba(45, 53, 60, 0.6)',
-        textPrimary: '#f8fafc',
-        textSecondary: '#cbd5e1',
-        primary: '#38bdf8',
-        accent: '#2dd4bf',
-        accentPurple: '#a78bfa',
-        border: 'rgba(100, 116, 139, 0.3)',
-    },
-};
+export { theme }; // Export global theme so Information.tsx can use it if needed, or update import there
 
 export const styles = StyleSheet.create({
     gradientContainer: {
@@ -34,19 +23,24 @@ export const styles = StyleSheet.create({
     headerTitle: {
         fontSize: normalize(22),
         fontWeight: 'bold',
-        color: theme.colors.textPrimary,
+        color: theme.colors.text,
         textAlign: 'center',
         marginBottom: normalize(8),
     },
     // Estilo para cada tarjeta de información
     infoCard: {
-        backgroundColor: theme.colors.card,
+        backgroundColor: theme.colors.card, // Glassmorphism
         borderRadius: normalize(20),
         padding: normalize(20),
         marginBottom: normalize(20),
         borderWidth: 1,
         borderColor: theme.colors.border,
         overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+        elevation: 6,
     },
     cardHeader: {
         flexDirection: 'row',
@@ -57,11 +51,13 @@ export const styles = StyleSheet.create({
         padding: normalize(8),
         borderRadius: normalize(12),
         marginRight: normalize(12),
+        borderWidth: 1,
+        borderColor: theme.colors.border,
     },
     cardTitle: {
         fontSize: normalize(18),
         fontWeight: 'bold',
-        color: theme.colors.textPrimary,
+        color: theme.colors.text,
     },
     cardText: {
         fontSize: normalize(15),
@@ -70,6 +66,6 @@ export const styles = StyleSheet.create({
     },
     highlightText: {
         fontWeight: 'bold',
-        color: theme.colors.textPrimary,
+        color: theme.colors.text,
     },
 });

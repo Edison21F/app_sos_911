@@ -1,5 +1,6 @@
 import { StyleSheet } from "react-native";
 import { normalize } from "../../utils/dimensions";
+import { theme } from "../../theme/theme";
 
 export const styles = StyleSheet.create({
 
@@ -15,18 +16,18 @@ export const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     height: '100%',
-  },  
+  },
   container: {
     flex: 1,
     paddingTop: normalize(10), // Menos espacio arriba para subir el formulario
   },
   header: {
-    backgroundColor: "#6B7F7D",
+    backgroundColor: "transparent", // Transparent to show gradient
     padding: 15,
     alignItems: "center",
   },
   headerText: {
-    color: "#fff",
+    color: theme.colors.text,
     fontSize: 16,
     fontWeight: "bold",
   },
@@ -39,19 +40,21 @@ export const styles = StyleSheet.create({
     height: 120,
     borderRadius: 60,
     borderWidth: 4,
-    borderColor: "#fff",  // Borde blanco
-    shadowColor: "#000", 
-    shadowOpacity: 0.2,
+    borderColor: theme.colors.primary,  // Key visual change
+    shadowColor: theme.colors.primary,
+    shadowOpacity: 0.5,
     shadowRadius: 8,
     elevation: 4,
   },
   editButton: {
     marginTop: 10,
-    backgroundColor: "#A9A9A9",  // Gris
+    backgroundColor: "rgba(0,0,0,0.6)",  // Dark transparent
     paddingVertical: 8,
     paddingHorizontal: 20,
     borderRadius: 25,
-    shadowColor: "#000", 
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+    shadowColor: "#000",
     shadowOpacity: 0.2,
     shadowRadius: 5,
     elevation: 3,
@@ -71,34 +74,34 @@ export const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     marginTop: 20,
-    color: "#fff",  // Las letras de las etiquetas son blancas
+    color: theme.colors.textSecondary,  // Slightly softer white
   },
   input: {
-    backgroundColor: "rgba(169, 169, 169, 0.5)",  // Gris con opacidad
+    backgroundColor: theme.colors.card,  // Glassmorphism
     paddingVertical: 14,
     paddingHorizontal: 15,
     borderRadius: 10,
     marginTop: 8,
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: theme.colors.border,
     fontSize: 16,
-    color: "#fff",  // Las letras dentro del input son blancas
-    shadowColor: "#000", 
+    color: "#fff",
+    shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowRadius: 5,
     elevation: 2,
   },
   button: {
-    backgroundColor: "#137C6B",
+    backgroundColor: theme.colors.primary, // Red button
     paddingVertical: 14,
     borderRadius: 10,
     marginTop: 30,
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
+    shadowColor: theme.colors.primary,
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
     elevation: 4,
-    marginBottom: 30, // Menos espacio abajo del botón
+    marginBottom: 30,
   },
   buttonText: {
     color: "#fff",
@@ -106,7 +109,7 @@ export const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   footer: {
-    backgroundColor: "#005550",
+    backgroundColor: "#005550", // Check if this is used? Maybe remove later
     padding: 10,
     alignItems: "center",
     position: "absolute",
@@ -126,13 +129,13 @@ export const styles = StyleSheet.create({
   },
   iconButton: {
     position: 'absolute',
-    right: 10, 
+    right: 10,
   },
   backArrowContainer: {
     position: 'absolute',
-    top: normalize(20), 
-    left: 10,  
-    zIndex: 1, 
+    top: normalize(20),
+    left: 10,
+    zIndex: 1,
   },
   loadingContainer: {
     flex: 1,
@@ -178,14 +181,16 @@ export const styles = StyleSheet.create({
     flex: 1,
     marginRight: 10,
     borderRadius: 8,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#333',
     paddingVertical: 12,
     paddingHorizontal: 20,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#555'
   },
   modalCancelButtonText: {
-    color: '#666',
+    color: '#aaa',
     fontWeight: 'bold',
     fontSize: 16,
   },
@@ -195,16 +200,18 @@ export const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.85)', // Darker overlay
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: '#1A1A1A', // Dark modal
     borderRadius: 12,
     padding: 20,
     width: '90%',
     maxWidth: 400,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -215,7 +222,7 @@ export const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#fff',
   },
   modalContent: {
     width: '100%',
@@ -254,7 +261,7 @@ export const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 12,
     marginBottom: 15,
     paddingHorizontal: 15,
@@ -266,7 +273,7 @@ export const styles = StyleSheet.create({
   inputNew: {
     flex: 1,
     fontSize: 16,
-    color: '#333',
+    color: '#fff',
   },
   inputDisabled: {
     opacity: 0.6,
@@ -310,21 +317,25 @@ export const styles = StyleSheet.create({
     color: '#fff',
   },
   addPhoneButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 20,
     width: 40,
     height: 40,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   phoneItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 15,
     marginBottom: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   phoneItemContent: {
     flex: 1,
@@ -338,11 +349,11 @@ export const styles = StyleSheet.create({
   phoneNumber: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#fff',
   },
   phoneDetail: {
     fontSize: 14,
-    color: '#666',
+    color: '#aaa',
     marginTop: 2,
   },
   emptyPhoneContainer: {
@@ -363,31 +374,32 @@ export const styles = StyleSheet.create({
     flexGrow: 1,
     paddingBottom: 20,
   },
- 
+
   profileAvatar: {
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: '#e0f2f1',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 4,
-    borderColor: '#fff',
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
+    borderWidth: 2,
+    borderColor: theme.colors.primary,
+    shadowColor: theme.colors.primary,
+    shadowOpacity: 0.5,
+    shadowRadius: 15,
     elevation: 4,
   },
   profileAvatarText: {
     fontSize: 44,
-    color: '#137C6B',
+    color: '#fff',
     fontWeight: 'bold',
   },
   editButtonStyled: {
-    backgroundColor: '#137C6B',
+    backgroundColor: theme.colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    borderWidth: 0,
   },
   phoneSectionContainer: {
     marginTop: 18,
@@ -407,7 +419,7 @@ export const styles = StyleSheet.create({
     marginTop: 8,
   },
   phoneItemContainer: {
-    backgroundColor: '#e0f2f1',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 16,
@@ -417,15 +429,17 @@ export const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
     maxWidth: 400,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   phoneItemTitleText: {
-    color: '#137C6B',
+    color: theme.colors.primary, // Red accents
     fontWeight: 'bold',
     fontSize: 15,
     marginBottom: 2,
   },
   phoneItemNumberText: {
-    color: '#222',
+    color: '#eee',
     fontSize: 15,
   },
   noPhoneContainer: {
@@ -464,16 +478,16 @@ export const styles = StyleSheet.create({
     marginBottom: 8,
   },
   addPhoneBtn: {
-    backgroundColor: '#1db954',
+    backgroundColor: theme.colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 12,
     paddingHorizontal: 28,
     borderRadius: 25,
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 5,
+    shadowColor: theme.colors.primary,
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
     elevation: 3,
     marginTop: 2,
     alignSelf: 'center',
@@ -489,54 +503,62 @@ export const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: 'rgba(0,0,0,0.8)',
   },
   modalContentContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: '#1E1E1E',
     borderRadius: 18,
     padding: 28,
     width: 320,
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: theme.colors.primary,
     shadowOpacity: 0.2,
-    shadowRadius: 10,
+    shadowRadius: 20,
     elevation: 8,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   modalTitleText: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#137C6B',
+    color: theme.colors.primary,
     marginBottom: 12,
   },
   modalInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f1f5f9',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 10,
     paddingHorizontal: 12,
     marginBottom: 10,
     width: '100%',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   modalInputIcon: {
     marginRight: 8,
+    color: theme.colors.textSecondary,
   },
   modalInput: {
     flex: 1,
     fontSize: 16,
-    color: '#222',
+    color: '#fff',
     paddingVertical: 10,
   },
   modalInputPlaceholder: {
     color: '#aaa',
   },
   modalSaveBtn: {
-    backgroundColor: '#137C6B',
+    backgroundColor: theme.colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 10,
     paddingHorizontal: 28,
     borderRadius: 20,
     marginTop: 6,
+    shadowColor: theme.colors.primary,
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
   },
   modalSaveBtnIcon: {
     marginRight: 6,
@@ -553,9 +575,10 @@ export const styles = StyleSheet.create({
   },
   modalCancelBtnIcon: {
     marginRight: 6,
+    color: '#aaa',
   },
   modalCancelBtnText: {
-    color: '#137C6B',
+    color: '#aaa',
     fontWeight: 'bold',
     fontSize: 16,
   },

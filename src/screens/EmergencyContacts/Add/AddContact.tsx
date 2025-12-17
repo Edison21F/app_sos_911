@@ -16,66 +16,121 @@ import { RootStackParamList } from '../../../navigation/Navigator';
 import { styles } from './AddContactStyles';
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-// import AsyncStorage from '@react-native-async-storage/async-storage'; // Commented out
-// import axios from 'axios'; // Commented out
+import api from '../../../api/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 type AddContactProps = StackScreenProps<RootStackParamList, 'AddContact'>;
 
 const AddContact = ({ navigation, route }: AddContactProps) => {
+  const [activeTab, setActiveTab] = useState<'manual' | 'search'>('manual');
+
+  // State Manual
   const [nombre, setNombre] = useState('');
   const [telefono, setTelefono] = useState('');
   const [descripcion, setDescripcion] = useState('');
 
-  const handleSave = async () => {
+  // State Search
+  const [searchQuery, setSearchQuery] = useState('');
+  const [loadingSearch, setLoadingSearch] = useState(false);
+  const [searchResult, setSearchResult] = useState<any>(null); // { id, nombre, telefono }
+
+  // --- LOGICA MANUAL ---
+  const handleSaveManual = async () => {
     if (!nombre.trim() || !telefono.trim()) {
       Alert.alert('Error', 'Por favor, completa todos los campos obligatorios.');
       return;
     }
 
     try {
-      // Simulate getting clienteId, generating a unique ID
-      // const clienteId = await AsyncStorage.getItem('clienteId'); // Commented out
-      const clienteId = 'mock_cliente_id_123'; // Hardcoded client ID for simulation
-      
+      const clienteId = await AsyncStorage.getItem('clienteId');
+
       if (!clienteId) {
-        Alert.alert('Error', 'No se pudo obtener la información del usuario (simulado)');
+        Alert.alert('Error', 'No se pudo obtener la información del usuario.');
         return;
       }
 
-      // Simulate API call delay
-      setTimeout(() => {
-        // No actual axios call
-        // const csrfResponse = await axios.get('http://192.168.1.31:9000/csrf-token');
-        // const csrfToken = csrfResponse.data.csrfToken;
+      await api.post('/contactos_emergencias/crear', {
+        clienteId: clienteId, // NOTA: Backend espera clienteId, no idUsuarioSql en el body del createEmergencyContact
+        nombre,
+        telefono,
+        relacion: descripcion || 'Contacto'
+      });
 
-        const newContact = {
-          id: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15), // Generate a unique ID
-          // cliente_id: clienteId, // Not needed for display in this component
-          nombre,
-          telefono,
-          descripcion: descripcion || 'Contacto', // Default description if empty
-        };
-
-        // Simulate successful response
-        Alert.alert('Éxito', 'Contacto guardado correctamente.', [
-          {
-            text: 'OK',
-            onPress: () => {
-              // Call the passed function to add the new contact to the list
-              if (route.params && route.params.updateContacts) { // Check if route.params and updateContacts exist
-                route.params.updateContacts(newContact, 'add');
-              }
-              navigation.goBack();
-            }
+      Alert.alert('Éxito', 'Contacto guardado correctamente.', [
+        {
+          text: 'OK',
+          onPress: () => {
+            navigation.goBack();
           }
-        ]);
-      }, 1000); // Simulate network delay
+        }
+      ]);
 
     } catch (error: any) {
-      console.error('Error al guardar contacto (simulado):', error);
-      Alert.alert('Error', 'No se pudo guardar el contacto (simulado)');
+      console.error('Error al guardar contacto:', error);
+      const msg = error.response?.data?.error || 'No se pudo guardar el contacto.';
+      Alert.alert('Error', msg);
     }
+  };
+
+  // --- LOGICA BUSQUEDA Y SOLICITUD ---
+  const handleSearchUser = async () => {
+    // Nota: En este diseño simplificado, enviamos la solicitud DIRECTAMENTE al backend
+    // El backend buscará y si encuentra, crea la solicitud inmediatamente.
+    // O podemos hacer un paso intermedio de "buscar" para mostrar el nombre antes de enviar.
+    // Vamos a implementar el paso intermedio simulado, O mejor, usamos el endpoint de solicitar directamante 
+    // y si falla es que no existe. Pero el usuario quiere "buscar y agregar".
+
+    // Para UX mejor: Podriamos tener un endpoint de "buscar preview" PERO por privacidad
+    // a veces no se debe mostrar info.
+    // Asumiremos que el usuario quiere enviar la solicitud directamente.
+
+    if (!searchQuery.trim()) {
+      Alert.alert('Error', 'Ingrese una cédula o teléfono');
+      return;
+    }
+
+    setLoadingSearch(true);
+    try {
+      const clienteId = await AsyncStorage.getItem('clienteId');
+      // Enviamos solicitud de vinculación
+      const response = await api.post('/contactos_emergencias/solicitar', {
+        clienteId,
+        criterio: searchQuery
+      });
+
+      if (response.data) {
+        Alert.alert('Solicitud Enviada', 'Se ha enviado una solicitud de contacto al usuario encontrado.');
+        setSearchResult(null);
+        setSearchQuery('');
+        navigation.goBack();
+      }
+
+    } catch (error: any) {
+      console.error('Error buscando usuario:', error);
+
+      const status = error.response?.status;
+      const backendMessage = error.response?.data?.message;
+
+      if (status === 404) {
+        Alert.alert('Usuario no encontrado', 'No se encontró ningún usuario con esa cédula o teléfono.');
+      } else if (status === 409) {
+        Alert.alert('Aviso', backendMessage || 'Ya existe una solicitud o relación con este usuario.');
+      } else {
+        const msg = backendMessage || 'Error de conexión o del servidor.';
+        Alert.alert('Error', msg);
+      }
+    } finally {
+      setLoadingSearch(false);
+    }
+  };
+
+  const handleSendRequest = () => {
+    // Este metodo quedaria obsoleto si hacemos la solicitud directa en handleSearchUser
+    // O si implementamos un endpoint de "preview" en el backend.
+    // Por simplicidad y privacidad, usaremos handleSearchUser como "Enviar Solicitud directa".
+    // Si quieres preview, necesitas un endpoint GET /clientes/buscar que retorne solo nombre parcial.
+    handleSearchUser();
   };
 
   const getInitials = (name: string) => {
@@ -109,47 +164,107 @@ const AddContact = ({ navigation, route }: AddContactProps) => {
                 <Ionicons name="arrow-back" size={24} color="black" />
               </TouchableOpacity>
 
-              <View style={styles.imagePickerContainer}>
-                <View style={styles.initialsContainer}>
-                  <Feather name="user" size={40} color="#fff" />
-                </View>
-                <Text style={styles.imageLabel}>Contacto</Text>
+              {/* TABS HEADER */}
+              <View style={{ flexDirection: 'row', marginBottom: 20, borderBottomWidth: 1, borderColor: '#eee' }}>
+                <TouchableOpacity
+                  style={{ flex: 1, padding: 10, alignItems: 'center', borderBottomWidth: 2, borderColor: activeTab === 'manual' ? '#00ACAC' : 'transparent' }}
+                  onPress={() => setActiveTab('manual')}
+                >
+                  <Text style={{ fontWeight: activeTab === 'manual' ? 'bold' : 'normal', color: activeTab === 'manual' ? '#00ACAC' : '#666' }}>Manual</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={{ flex: 1, padding: 10, alignItems: 'center', borderBottomWidth: 2, borderColor: activeTab === 'search' ? '#00ACAC' : 'transparent' }}
+                  onPress={() => setActiveTab('search')}
+                >
+                  <Text style={{ fontWeight: activeTab === 'search' ? 'bold' : 'normal', color: activeTab === 'search' ? '#00ACAC' : '#666' }}>Buscar Usuario</Text>
+                </TouchableOpacity>
               </View>
 
-              <Text style={styles.label}>Nombre:</Text>
-              <TextInput 
-                style={styles.input} 
-                placeholder="Ej. Juan Pérez" 
-                value={nombre} 
-                onChangeText={setNombre} 
-              />
+              {activeTab === 'manual' ? (
+                // --- FORMULARIO MANUAL ---
+                <>
+                  <View style={styles.imagePickerContainer}>
+                    <View style={styles.initialsContainer}>
+                      <Feather name="user" size={40} color="#fff" />
+                    </View>
+                    <Text style={styles.imageLabel}>Contacto</Text>
+                  </View>
 
-              <Text style={styles.label}>Teléfono:</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="+593 987 654 321"
-                keyboardType="phone-pad"
-                value={telefono}
-                onChangeText={setTelefono}
-              />
+                  <Text style={styles.label}>Nombre:</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Ej. Juan Pérez"
+                    value={nombre}
+                    onChangeText={setNombre}
+                  />
 
-              <Text style={styles.label}>Relación:</Text>
-              <TextInput 
-                style={styles.input} 
-                placeholder="Ej. Amigo cercano" 
-                value={descripcion} 
-                onChangeText={setDescripcion} 
-              />
+                  <Text style={styles.label}>Teléfono:</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="+593 987 654 321"
+                    keyboardType="phone-pad"
+                    value={telefono}
+                    onChangeText={setTelefono}
+                  />
 
-              <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                <Feather name="save" size={24} color="white" />
-                <Text style={[styles.saveButtonText, { marginLeft: 8 }]}>Guardar</Text>
-              </TouchableOpacity>
+                  <Text style={styles.label}>Relación:</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Ej. Amigo cercano"
+                    value={descripcion}
+                    onChangeText={setDescripcion}
+                  />
+
+                  <TouchableOpacity style={styles.saveButton} onPress={handleSaveManual}>
+                    <Feather name="save" size={24} color="white" />
+                    <Text style={[styles.saveButtonText, { marginLeft: 8 }]}>Guardar Contacto</Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                // --- FORMULARIO BUSQUEDA ---
+                <>
+                  <Text style={[styles.label, { marginTop: 10 }]}>Buscar por Cédula o Teléfono:</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Ingrese CI o celular"
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                  />
+
+                  <TouchableOpacity
+                    style={[styles.saveButton, { backgroundColor: '#333' }]}
+                    onPress={handleSearchUser}
+                    disabled={loadingSearch}
+                  >
+                    <Feather name="search" size={24} color="white" />
+                    <Text style={[styles.saveButtonText, { marginLeft: 8 }]}>
+                      {loadingSearch ? 'Buscando...' : 'Buscar'}
+                    </Text>
+                  </TouchableOpacity>
+
+                  {/* RESULTADO DE BÚSQUEDA */}
+                  {searchResult && (
+                    <View style={{ marginTop: 20, padding: 15, backgroundColor: '#f0f9ff', borderRadius: 8, borderWidth: 1, borderColor: '#bae6fd' }}>
+                      <Text style={{ fontWeight: 'bold', fontSize: 16 }}>Usuario Encontrado:</Text>
+                      <Text style={{ fontSize: 14, marginVertical: 5 }}>{searchResult.nombre}</Text>
+
+                      <TouchableOpacity
+                        style={[styles.saveButton, { marginTop: 10, backgroundColor: '#00ACAC' }]}
+                        onPress={handleSendRequest}
+                      >
+                        <Feather name="user-plus" size={20} color="white" />
+                        <Text style={[styles.saveButtonText, { marginLeft: 8 }]}>Enviar Solicitud</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </>
+              )}
+
             </View>
           </SafeAreaView>
         </ScrollView>
       </KeyboardAvoidingView>
-     </LinearGradient>
+    </LinearGradient>
   );
 };
 

@@ -1,5 +1,8 @@
 // Importamos StyleSheet desde React Native para definir los estilos
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Dimensions } from 'react-native';
+import { theme } from '../../../theme/theme';
+
+const { width } = Dimensions.get('window');
 
 // Definimos los estilos de la pantalla de inicio de sesión
 export const LoginStyles = StyleSheet.create({
@@ -22,22 +25,22 @@ export const LoginStyles = StyleSheet.create({
 
   // Contenedor del logo y título
   logoContainer: {
-    marginBottom: 30, // Espaciado inferior para separar del siguiente elemento
+    marginBottom: 40, // Espaciado inferior para separar del siguiente elemento
     alignItems: 'center', // Centra los elementos hijos horizontalmente
   },
 
   // Estilo del logo de la aplicación
   logo: {
-    width: 100, // Ancho de la imagen del logo
-    height: 100, // Alto de la imagen del logo
+    width: 120, // Ancho de la imagen del logo
+    height: 120, // Alto de la imagen del logo
     marginBottom: 20, // Espaciado inferior para separarlo del título
   },
 
   // Estilo del título principal "Sos911"
   title: {
-    fontSize: 40, // Tamaño grande para que resalte
+    fontSize: 48, // Tamaño grande para que resalte
     fontWeight: 'bold', // Negrita para mayor impacto visual
-    color: '#fff', // Texto en color blanco
+    color: theme.colors.text, // Texto en color blanco
     marginBottom: 10, // Espaciado inferior
     textAlign: 'center', // Centra el texto
   },
@@ -45,28 +48,41 @@ export const LoginStyles = StyleSheet.create({
   // Estilo para la palabra "Sos" dentro del título
   sosText: {
     fontWeight: 'bold', // Negrita para destacar
-    color: '#fff', // Color oscuro para contraste
+    color: theme.colors.text, // Color blanco
   },
 
   // Estilo para "911" dentro del título
   nineElevenText: {
     fontWeight: 'bold', // Negrita para destacar
-    color: '#00ACAC', // Color celeste para llamar la atención
+    color: theme.colors.primary, // Rojo corporativo
   },
 
   // Estilo del subtítulo que indica que el usuario debe iniciar sesión
   subtitle: {
     fontSize: 16, // Tamaño de fuente moderado
     fontWeight: '400', // Peso de fuente normal
-    color: '#fff', // Cambiado a blanco para mejor visibilidad
-    marginBottom: 30, // Espaciado inferior
+    color: theme.colors.textSecondary, // Gris claro
+    marginBottom: 40, // Espaciado inferior
     textAlign: 'center', // Centra el texto en la pantalla
   },
 
   // Contenedor de los campos de entrada
   inputContainer: {
-    width: '85%', // Hace que los inputs no sean demasiado anchos
+    width: '100%', // Hace que los inputs no sean demasiado anchos
     maxWidth: 400, // Evita que los inputs sean demasiado grandes en pantallas grandes
+    backgroundColor: theme.colors.card, // Fondo glassmorphism
+    borderRadius: 20,
+    padding: 30,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 10,
   },
 
   // ***** NUEVOS ESTILOS PARA INPUTS CON ICONOS *****
@@ -74,86 +90,71 @@ export const LoginStyles = StyleSheet.create({
   inputWrapper: {
     flexDirection: 'row', // Para que el icono y el texto estén en la misma fila
     alignItems: 'center', // Centra verticalmente el icono y el texto
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 3.84,
-    elevation: 5,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)', // Translucido
+    borderRadius: 12,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     paddingHorizontal: 15, // Añadir padding horizontal aquí
-    height: 50, // Altura fija para el contenedor
+    height: 55, // Altura fija para el contenedor
   },
   // Estilo para el icono dentro del input
   icon: {
     marginRight: 10, // Espacio a la derecha del icono
-    color: '#999', // Color del icono
+    color: theme.colors.textSecondary, // Color del icono
   },
   // Estilo del TextInput cuando hay un icono
   inputField: {
     flex: 1, // Para que el TextInput ocupe el resto del espacio disponible
     paddingVertical: 0, // Ajustar el padding vertical del input
     fontSize: 16, // Tamaño de fuente para el texto del input
-    color: '#333', // Color del texto del input
+    color: theme.colors.text, // Color del texto del input (blanco)
   },
   // **********************************************
 
-
-  // Se eliminan los estilos 'input' originales que solo se aplicaban al TextInput directamente
-  // input: {
-  //   backgroundColor: '#fff',
-  //   borderRadius: 10,
-  //   padding: 15,
-  //   marginBottom: 15,
-  //   shadowColor: '#000',
-  //   shadowOffset: {
-  //     width: 0,
-  //     height: 2,
-  //   },
-  //   shadowOpacity: 0.05,
-  //   shadowRadius: 3.84,
-  //   elevation: 5,
-  // },
-
   // Botón de inicio de sesión
   loginButton: {
-    backgroundColor: '#00ACAC', // Color llamativo del botón
-    borderRadius: 10, // Bordes redondeados para un diseño moderno
-    padding: 15, // Espaciado interno para mayor comodidad al tocar
+    backgroundColor: theme.colors.primary, // Color llamativo del botón (Rojo)
+    borderRadius: 12, // Bordes redondeados para un diseño moderno
+    paddingVertical: 16, // Espaciado interno vertical
     width: '100%', // Ocupa todo el ancho disponible en el contenedor
     alignItems: 'center', // Centra el texto dentro del botón
     marginTop: 10, // Espaciado superior para separarlo de los inputs
+    shadowColor: theme.colors.primary,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 5,
   },
 
   // Texto dentro del botón de inicio de sesión
   loginButtonText: {
     color: '#fff', // Texto en color blanco para contrastar con el fondo
     fontSize: 18, // Tamaño de fuente adecuado para la lectura
-    fontWeight: '600', // Peso medio para resaltar
+    fontWeight: 'bold', // Peso medio para resaltar
   },
 
   // Contenedor del mensaje de registro
   registerContainer: {
     flexDirection: 'row', // Alinea los elementos en una fila
-    marginTop: 20, // Espaciado superior
-     justifyContent: 'center', 
+    marginTop: 25, // Espaciado superior
+    justifyContent: 'center',
   },
 
   // Texto que pregunta si el usuario tiene cuenta
   registerText: {
-    color: '#FFFFFF', // Texto en color blanco
+    color: theme.colors.textSecondary, // Texto gris claro
     fontSize: 14, // Tamaño de fuente pequeño pero legible
   },
 
   // Enlace para registrarse
   registerLink: {
-    color: '#66F0E6',// Azul para indicar que es un enlace
+    color: theme.colors.primary,// Rojo para indicar que es un enlace
     fontSize: 14, // Tamaño de fuente similar al texto anterior
-    fontWeight: '600', // Negrita para resaltarlo
+    fontWeight: 'bold', // Negrita para resaltarlo
     marginLeft: 5, // Espaciado izquierdo para separarlo del texto anterior
   },
 });

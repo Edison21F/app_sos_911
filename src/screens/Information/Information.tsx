@@ -3,7 +3,7 @@ import { View, Text, ScrollView, SafeAreaView, ActivityIndicator } from "react-n
 import { LinearGradient } from 'expo-linear-gradient';
 import { CheckCircle, Heart, Eye } from 'lucide-react-native';
 import Header from "../../components/Header/Header";
-import CustomSidebar from "../../components/Sidebar/Sidebar"; 
+import CustomSidebar from "../../components/Sidebar/Sidebar";
 import { styles, theme } from "./InformationStyles";
 import { normalize } from "../../utils/dimensions";
 
@@ -24,25 +24,25 @@ interface ContenidoApp {
 
 // Hardcoded content data based on the image provided
 const HARDCODED_APP_CONTENT: ContenidoApp = {
-    gradientStart: "#026b6b", // Matches your LinearGradient in other files
-    gradientEnd: "#2D353C",   // Matches your LinearGradient in other files
-    fontFamily: 'System', // Default font family, adjust if you have a custom one
-    mainTitle: 'Un toque para tu seguridad', // Main title as seen in the header, also present in Header component
+    gradientStart: theme.colors.gradientBackground[0],
+    gradientEnd: theme.colors.gradientBackground[1],
+    fontFamily: 'System',
+    mainTitle: 'Un toque para tu seguridad',
     sections: [
         {
             key: 'howItWorks',
             title: 'Cómo Funciona',
-            content: 'Presiona el botón de pánico 3 veces para enviar una alerta instantánea a nuestra central, a la comunidad cercana y a tus contactos de emergencia.' // Content from image
+            content: 'Presiona el botón de pánico 3 veces para enviar una alerta instantánea a nuestra central, a la comunidad cercana y a tus contactos de emergencia.'
         },
         {
             key: 'mission',
             title: 'Nuestra Misión',
-            content: 'Proporcionar una herramienta de respuesta rápida que conecte a personas en emergencia con ayuda inmediata, fortaleciendo la seguridad y la colaboración ciudadana a través de la tecnología.' // Content from image
+            content: 'Proporcionar una herramienta de respuesta rápida que conecte a personas en emergencia con ayuda inmediata, fortaleciendo la seguridad y la colaboración ciudadana a través de la tecnología.'
         },
         {
             key: 'vision',
             title: 'Nuestra Visión',
-            content: 'Ser la plataforma de seguridad colaborativa líder, creando vecindarios más seguros y resilientes donde cada miembro de la comunidad se sienta protegido y respaldado en todo momento.' // Content from image
+            content: 'Ser la plataforma de seguridad colaborativa líder, creando vecindarios más seguros y resilientes donde cada miembro de la comunidad se sienta protegido y respaldado en todo momento.'
         }
     ]
 };
@@ -56,15 +56,15 @@ const ICONS: Record<Section['key'], (color: string) => ReactNode> = {
 };
 
 const ICON_BG: Record<Section['key'], string> = {
-    howItWorks: "rgba(56, 189, 248, 0.15)",
-    mission: "rgba(45, 212, 191, 0.15)",
-    vision: "rgba(167, 139, 250, 0.15)"
+    howItWorks: 'rgba(255, 75, 75, 0.1)', // Red tint
+    mission: 'rgba(255, 75, 75, 0.1)',
+    vision: 'rgba(255, 75, 75, 0.1)'
 };
 
 const ICON_COLOR: Record<Section['key'], string> = {
     howItWorks: theme.colors.primary,
-    mission: theme.colors.accent,
-    vision: theme.colors.accentPurple
+    mission: theme.colors.primary,
+    vision: theme.colors.primary
 };
 
 interface InfoCardProps {
@@ -77,7 +77,7 @@ interface InfoCardProps {
 const InfoCard: React.FC<InfoCardProps> = ({ icon, title, children, iconBgColor }) => (
     <View style={styles.infoCard}>
         <View style={styles.cardHeader}>
-            <View style={[styles.iconContainer, { backgroundColor: iconBgColor }]}> 
+            <View style={[styles.iconContainer, { backgroundColor: iconBgColor }]}>
                 {icon}
             </View>
             <Text style={styles.cardTitle}>{title}</Text>

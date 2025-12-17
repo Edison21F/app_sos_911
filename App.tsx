@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { View, ActivityIndicator } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -17,19 +18,53 @@ import ProfileScreen from './src/screens/Profile/Profile';
 import InformationScreen from './src/screens/Information/Information';
 import NotificationsScreen from './src/screens/Notifications/Notifications';
 import AlertHistoryScreen from './src/screens/Details/AlertHistory';
+import EmergencySelectionScreen from './src/screens/Emergency/EmergencySelectionScreen';
+import ActiveEmergencyScreen from './src/screens/Emergency/ActiveEmergencyScreen';
+import EmergencyAlertScreen from './src/screens/Emergency/EmergencyAlertScreen';
+import NearbyAlertsScreen from './src/screens/Alerts/NearbyAlertsScreen';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { theme } from './src/theme/theme';
 
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
+  const [initialRoute, setInitialRoute] = useState<keyof RootStackParamList>('Welcome');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const checkLoginState = async () => {
+      try {
+        const clienteId = await AsyncStorage.getItem('clienteId');
+        if (clienteId) {
+          setInitialRoute('Home');
+        }
+      } catch (error) {
+        console.error('Error checking login state:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkLoginState();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background }}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </View>
+    );
+  }
+
   return (
     <SafeAreaProvider>
       <NavigationContainer>
         <Stack.Navigator
-          initialRouteName="Welcome"
+          initialRouteName={initialRoute}
           screenOptions={{
             headerShown: false,
-            contentStyle: { backgroundColor: '#ffffff' },
+            contentStyle: { backgroundColor: theme.colors.background },
           }}
         >
           <Stack.Screen name="Welcome" component={WelcomeScreen} />
@@ -46,6 +81,10 @@ export default function App() {
           <Stack.Screen name="Notifications" component={NotificationsScreen} />
           <Stack.Screen name="Information" component={InformationScreen} />
           <Stack.Screen name="AlertHistory" component={AlertHistoryScreen} />
+          <Stack.Screen name="EmergencySelection" component={EmergencySelectionScreen} />
+          <Stack.Screen name="ActiveEmergency" component={ActiveEmergencyScreen} />
+          <Stack.Screen name="EmergencyAlert" component={EmergencyAlertScreen} />
+          <Stack.Screen name="NearbyAlerts" component={NearbyAlertsScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

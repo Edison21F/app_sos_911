@@ -7,7 +7,7 @@ import {
   SafeAreaView,
   BackHandler,
   Image,
-  
+
 } from 'react-native';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -16,6 +16,7 @@ import { styles } from './SidebarStyles';
 import { CustomSidebarProps, MenuItem } from './types';
 import { RootStackParamList } from '../../navigation/Navigator';
 import { normalize } from '../../utils/dimensions';
+import { theme } from '../../theme/theme';
 import AsyncStorage from '@react-native-async-storage/async-storage'; // Still here for logout logic, but not directly related to contacts data.
 
 const CustomSidebar: React.FC<CustomSidebarProps> = ({ isOpen, onClose }) => {
@@ -32,7 +33,7 @@ const CustomSidebar: React.FC<CustomSidebarProps> = ({ isOpen, onClose }) => {
     { title: 'Notificaciónes', screen: 'Notifications' },
     { title: 'Historial de Alertas', screen: 'AlertHistory' },
     { title: 'Información', screen: 'Information' },
-    
+
   ];
 
   useEffect(() => {
@@ -68,9 +69,9 @@ const CustomSidebar: React.FC<CustomSidebarProps> = ({ isOpen, onClose }) => {
   const renderIcon = (title: string) => {
     const iconSize = normalize(20);
     const iconColor = '#ffff';
-  
+
     const normalizedTitle = title.toLowerCase().trim();
-  
+
     if (normalizedTitle.includes('inicio')) return <Home size={iconSize} color={iconColor} />;
     if (normalizedTitle.includes('contactos')) return <PhoneCall size={iconSize} color={iconColor} />;
     if (normalizedTitle.includes('perfil')) return <User size={iconSize} color={iconColor} />;
@@ -79,13 +80,13 @@ const CustomSidebar: React.FC<CustomSidebarProps> = ({ isOpen, onClose }) => {
     if (normalizedTitle.includes('notificación')) return <Bell size={iconSize} color={iconColor} />;
     if (normalizedTitle.includes('información')) return <Info size={iconSize} color={iconColor} />;
     if (normalizedTitle.includes('historial') || normalizedTitle.includes('alerta')) {
-     return <History size={iconSize} color={iconColor} />;
-  
+      return <History size={iconSize} color={iconColor} />;
+
     }
-  
+
     return null;
   };
-  
+
 
   const handleLogout = async () => {
     onClose();

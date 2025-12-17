@@ -1,5 +1,6 @@
 import { StyleSheet, Platform, StatusBar } from 'react-native';
 import { normalize } from '../../utils/dimensions';
+import { theme } from '../../theme/theme';
 
 const styles = StyleSheet.create({
   container: {
@@ -19,12 +20,14 @@ const styles = StyleSheet.create({
   alertCard: {
     flexDirection: 'row',
     alignItems: 'stretch',
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.card, // Glassmorphism
     borderRadius: normalize(16),
     marginBottom: normalize(20),
+    borderWidth: 1,
+    borderColor: theme.colors.border,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.10,
+    shadowOpacity: 0.15,
     shadowRadius: 12,
     elevation: 6,
     overflow: 'hidden',
@@ -33,18 +36,20 @@ const styles = StyleSheet.create({
   // Barra lateral de color
   borderSOS: {
     borderLeftWidth: normalize(7),
-    borderLeftColor: '#FF9E5D',
+    borderLeftColor: theme.colors.primary, // Red
   },
   border911: {
     borderLeftWidth: normalize(7),
-    borderLeftColor: '#FF4D4D',
+    borderLeftColor: theme.colors.primaryDark,
   },
   // Ícono grande a la izquierda
   iconContainer: {
     width: normalize(60),
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F7F7F7',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRightWidth: 1,
+    borderRightColor: theme.colors.border,
   },
   // Contenido principal de la tarjeta
   cardContent: {
@@ -63,13 +68,13 @@ const styles = StyleSheet.create({
     gap: normalize(2),
   },
   alertType: {
-    fontSize: normalize(20),
+    fontSize: normalize(18),
     fontWeight: 'bold',
-    color: '#222',
+    color: theme.colors.text,
   },
   alertSubtitle: {
     fontSize: normalize(13),
-    color: '#888',
+    color: theme.colors.textSecondary,
     fontWeight: '500',
   },
   // Badge de estado
@@ -79,21 +84,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: normalize(16),
     alignSelf: 'flex-start',
     fontWeight: 'bold',
-    fontSize: normalize(13),
+    fontSize: normalize(11),
     overflow: 'hidden',
+    borderWidth: 1,
   },
   status_resuelto: {
-    backgroundColor: '#00ACAC',
-    color: '#fff',
+    backgroundColor: 'rgba(40, 180, 99, 0.15)', // Success transparent
+    color: theme.colors.success,
+    borderColor: theme.colors.success,
   },
   status_activo: {
-    backgroundColor: '#D9534F',
-    color: '#fff',
+    backgroundColor: 'rgba(255, 75, 75, 0.15)', // Primary/Danger transparent
+    color: theme.colors.primary,
+    borderColor: theme.colors.primary,
   },
   // Línea divisoria
   divider: {
     height: 1,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: theme.colors.border,
     marginVertical: normalize(10),
   },
   // Campos de fecha y ubicación
@@ -111,20 +119,20 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     fontSize: normalize(11),
-    color: '#888',
+    color: theme.colors.textSecondary,
     fontWeight: 'bold',
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
   infoValue: {
-    fontSize: normalize(15),
-    color: '#333',
+    fontSize: normalize(14),
+    color: theme.colors.text,
     fontWeight: '500',
     marginTop: normalize(1),
   },
   noDataText: {
     fontSize: normalize(16),
-    color: '#AAA',
+    color: theme.colors.textSecondary,
     textAlign: 'center',
     marginTop: normalize(20),
     fontStyle: 'italic',

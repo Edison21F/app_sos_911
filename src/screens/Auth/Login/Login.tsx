@@ -19,6 +19,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Application from 'expo-application';
+import { theme } from '../../../theme/theme';
 
 export default function LoginScreen() {
   const navigation = useNavigation<LoginScreenNavigationProp>();
@@ -79,8 +80,12 @@ export default function LoginScreen() {
       console.log('Login exitoso:', response.data);
 
       // Guardar datos de sesión
-      if (response.data.userId) {
-        await AsyncStorage.setItem('clienteId', response.data.userId.toString());
+      const userId = response.data.user?.id || response.data.userId;
+      if (userId) {
+        await AsyncStorage.setItem('clienteId', userId.toString());
+        console.log('Cliente ID guardado:', userId);
+      } else {
+        console.error('No se encontró ID de usuario en la respuesta de login', response.data);
       }
 
       Alert.alert('Éxito', 'Inicio de sesión exitoso', [
@@ -100,7 +105,7 @@ export default function LoginScreen() {
 
   return (
     <LinearGradient
-      colors={['#026b6b', '#2D353C']}
+      colors={theme.colors.gradientBackground}
       start={{ x: 0, y: 1 }}
       end={{ x: 1, y: 0 }}
       style={LoginStyles.backgroundGradient}
