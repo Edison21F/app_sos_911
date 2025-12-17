@@ -1,0 +1,212 @@
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ActivityIndicator } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Location from 'expo-location';
+import { Feather, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
+import AlertService, { ALERTA_TYPES, ALERTA_PRIORITIES } from '../../services/alert.service';
+import { theme } from '../../theme/theme';
+
+const EmergencySelectionScreen = () => {
+    const navigation = useNavigation<any>();
+    const [loading, setLoading] = useState(false);
+    const [location, setLocation] = useState<{ latitud: number, longitud: number } | null>(null);
+
+    useEffect(() => {
+        (async () => {
+            let { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert('Permiso denegado', 'Se necesita ubicación para emergencias.');
+                return;
+            }
+
+            let location = await Location.getCurrentPositionAsync({});
+            setLocation({
+                latitud: location.coords.latitude,
+                longitud: location.coords.longitude
+            });
+        })();
+    }, []);
+
+    const handleEmergency = async (type: string, priority: string, title: string) => {
+        if (!location) {
+            Alert.alert('Esperando ubicación...', 'Por favor espera a que obtengamos tu ubicación.');
+            // Opcional: Permitir enviar sin ubicación precisa o usar la última conocida
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const result = await AlertService.createEmergencyAlert(type, priority, location);
+
+            setLoading(false);
+            // Navegar a pantalla de alerta activa pasando datos
+            navigation.navigate('ActiveEmergency', {
+                type: type,
+                alertData: result.data,
+                isOffline: result.offline
+            });
+
+        } catch (error) {
+            setLoading(false);
+            console.error(error);
+            Alert.alert('Error', 'No se pudo activar la alerta');
+        }
+    };
+
+    const EmergencyButton = ({ icon, label, type, priority, color, subLabel }: any) => (
+        <TouchableOpacity
+            style={[styles.card, { backgroundColor: color }]}
+            onPress={() => handleEmergency(type, priority, label)}
+            disabled={loading}
+        >
+            <View style={styles.iconContainer}>
+                {icon}
+            </View>
+            <View style={styles.textContainer}>
+                <Text style={styles.cardTitle}>{label}</Text>
+                <Text style={styles.cardSubtitle}>{subLabel}</Text>
+            </View>
+        </TouchableOpacity>
+    );
+
+    return (
+        <LinearGradient
+            colors={['#1a1a1a', '#000000']}
+            style={styles.container}
+        >
+            <SafeAreaView style={{ flex: 1 }}>
+                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                    <Feather name="arrow-left" size={24} color="#fff" />
+                </TouchableOpacity>
+
+                <Text style={styles.headerTitle}>¿Cuál es tu emergencia?</Text>
+                <Text style={styles.headerSubtitle}>Selecciona la opción que mejor describa la situación</Text>
+
+                <View style={styles.grid}>
+                    <EmergencyButton
+                        icon={<FontAwesome5 name="heartbeat" size={32} color="#fff" />}
+                        label="Médica"
+                        subLabel="Salud, Heridas"
+                        type={ALERTA_TYPES.MEDICAL}
+                        priority={ALERTA_PRIORITIES.ALTA}
+                        color="#E53935" // Red
+                    />
+
+                    <EmergencyButton
+                        icon={<FontAwesome5 name="fire" size={32} color="#fff" />}
+                        label="Incendio"
+                        subLabel="Fuego, Explosión"
+                        type={ALERTA_TYPES.FIRE}
+                        priority={ALERTA_PRIORITIES.CRITICA}
+                        color="#FB8C00" // Orange
+                    />
+
+                    <EmergencyButton
+                        icon={<MaterialIcons name="dangerous" size={36} color="#fff" />}
+                        label="Peligro"
+                        subLabel="Robo, Acoso"
+                        type={ALERTA_TYPES.DANGER}
+                        priority={ALERTA_PRIORITIES.CRITICA}
+                        color="#5E35B1" // Purple
+                    />
+
+                    <EmergencyButton
+                        icon={<FontAwesome5 name="car-crash" size={30} color="#fff" />}
+                        label="Tránsito"
+                        subLabel="Choque, Atropello"
+                        type={ALERTA_TYPES.TRAFFIC}
+                        priority={ALERTA_PRIORITIES.ALTA}
+                        color="#0277BD" // Blue
+                    />
+
+                    <EmergencyButton
+                        icon={<Feather name="shield" size={32} color="#fff" />}
+                        label="Preventiva"
+                        subLabel="Sospecha, Riesgo"
+                        type={ALERTA_TYPES.PREVENTIVE}
+                        priority={ALERTA_PRIORITIES.MEDIA}
+                        color="#43A047" // Green
+                    />
+                </View>
+
+                {loading && (
+                    <View style={styles.loadingOverlay}>
+                        <ActivityIndicator size="large" color="#fff" />
+                        <Text style={{ color: '#fff', marginTop: 10 }}>Activando Alerta...</Text>
+                    </View>
+                )}
+
+            </SafeAreaView>
+        </LinearGradient>
+    );
+};
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        padding: 20,
+    },
+    headerTitle: {
+        fontSize: 28,
+        fontWeight: 'bold',
+        color: '#fff',
+        marginTop: 20,
+        marginBottom: 5,
+    },
+    headerSubtitle: {
+        fontSize: 16,
+        color: '#ccc',
+        marginBottom: 30,
+    },
+    grid: {
+        flexDirection: 'column',
+        gap: 15,
+    },
+    card: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 20,
+        borderRadius: 16,
+        elevation: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+    },
+    iconContainer: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 20,
+    },
+    textContainer: {
+        flex: 1,
+    },
+    cardTitle: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        color: '#fff',
+    },
+    cardSubtitle: {
+        fontSize: 14,
+        color: 'rgba(255,255,255,0.8)',
+    },
+    backButton: {
+        padding: 10,
+        marginLeft: -10,
+        marginBottom: 0
+    },
+    loadingOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 10
+    }
+});
+
+export default EmergencySelectionScreen;

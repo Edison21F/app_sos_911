@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, ScrollView, Modal, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from "react-native";
+import { useNavigation } from '@react-navigation/native';
 import { styles } from "./profileStyles";
 import { AntDesign } from "@expo/vector-icons";
 import Header from "../../components/Header/Header";
-import CustomSidebar from "../../components/Sidebar/Sidebar";
+// Removed CustomSidebar import
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons, Feather, FontAwesome5 } from '@expo/vector-icons';
 import axios from 'axios';
@@ -22,6 +23,7 @@ import { format } from 'date-fns';
 const API_BASE_URL = api.defaults.baseURL ? api.defaults.baseURL.replace('/api', '') : '';
 
 const ProfileScreen = () => {
+  const navigation = useNavigation<any>();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [originalEmail, setOriginalEmail] = useState("");
@@ -478,7 +480,7 @@ const ProfileScreen = () => {
       end={{ x: 1, y: 1 }}
     >
       <View style={styles.container}>
-        <Header onMenuPress={() => setSidebarOpen(true)} customTitle="Ver Perfil" />
+        <Header showBackButton={true} onBackPress={() => navigation.goBack()} customTitle="Ver Perfil" onMenuPress={() => { }} />
 
         <View style={styles.profileContainer}>
           <View style={{ alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
@@ -513,10 +515,20 @@ const ProfileScreen = () => {
           </View>
 
           {!isEditing ? (
-            <TouchableOpacity style={[styles.editButton, styles.editButtonStyled]} onPress={handleEditPress}>
-              <Feather name="edit" size={18} color="#fff" style={{ marginRight: 6 }} />
-              <Text style={styles.editButtonText}>Editar Perfil</Text>
-            </TouchableOpacity>
+            <>
+              <TouchableOpacity style={[styles.editButton, styles.editButtonStyled]} onPress={handleEditPress}>
+                <Feather name="edit" size={18} color="#fff" style={{ marginRight: 6 }} />
+                <Text style={styles.editButtonText}>Editar Perfil</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.editButton, { marginTop: 10, backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.2)' }]}
+                onPress={() => navigation.navigate('Information' as any)}
+              >
+                <Feather name="info" size={18} color="#fff" style={{ marginRight: 6 }} />
+                <Text style={styles.editButtonText}>Acerca de nosotros</Text>
+              </TouchableOpacity>
+            </>
           ) : null}
         </View>
 
@@ -722,7 +734,6 @@ const ProfileScreen = () => {
           </KeyboardAvoidingView>
         </Modal>
       </View>
-      <CustomSidebar isOpen={isSidebarOpen} onClose={() => setSidebarOpen(false)} />
     </LinearGradient>
   );
 };

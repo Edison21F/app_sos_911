@@ -24,6 +24,7 @@ export type RootStackParamList = {
   Login: undefined;
   Register: undefined;
   Home: undefined;
+  MainTabs: undefined;
   Groups: undefined;
   GroupChat: {
     group: Group;
@@ -40,7 +41,7 @@ export type RootStackParamList = {
   Information: undefined;
   AlertHistory: undefined;
   EmergencySelection: undefined;
-  ActiveEmergency: { type: { id: string, label: string, color: string, priority: string } };
+  ActiveEmergency: { type: string, alertData?: any, isOffline?: boolean };
   EmergencyAlert: { alertId: string, senderName: string, type: string };
   NearbyAlerts: undefined;
 };

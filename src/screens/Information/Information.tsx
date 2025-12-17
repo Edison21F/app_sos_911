@@ -1,5 +1,7 @@
 import React, { useState, useEffect, ReactNode } from "react";
-import { View, Text, ScrollView, SafeAreaView, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, ActivityIndicator } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CheckCircle, Heart, Eye } from 'lucide-react-native';
 import Header from "../../components/Header/Header";
@@ -87,7 +89,7 @@ const InfoCard: React.FC<InfoCardProps> = ({ icon, title, children, iconBgColor 
 );
 
 const InformationScreen = () => {
-    const [isSidebarOpen, setSidebarOpen] = useState(false);
+    const navigation = useNavigation();
     const [contenido, setContenido] = useState<ContenidoApp | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -119,7 +121,12 @@ const InformationScreen = () => {
             style={styles.gradientContainer}
         >
             <SafeAreaView style={styles.safeArea}>
-                <Header onMenuPress={() => setSidebarOpen(true)} customTitle="Información" />
+                <Header
+                    showBackButton={true}
+                    onBackPress={() => navigation.goBack()}
+                    customTitle="Información"
+                    onMenuPress={() => { }}
+                />
                 <ScrollView contentContainerStyle={styles.contentContainer}>
                     <View style={styles.header}>
                         <Text style={[styles.headerTitle, { fontFamily: contenido.fontFamily }]}>{contenido.mainTitle}</Text>
@@ -136,7 +143,6 @@ const InformationScreen = () => {
                         </InfoCard>
                     ))}
                 </ScrollView>
-                <CustomSidebar isOpen={isSidebarOpen} onClose={() => setSidebarOpen(false)} />
             </SafeAreaView>
         </LinearGradient>
     );

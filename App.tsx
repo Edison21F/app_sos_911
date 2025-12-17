@@ -18,10 +18,11 @@ import ProfileScreen from './src/screens/Profile/Profile';
 import InformationScreen from './src/screens/Information/Information';
 import NotificationsScreen from './src/screens/Notifications/Notifications';
 import AlertHistoryScreen from './src/screens/Details/AlertHistory';
-import EmergencySelectionScreen from './src/screens/Emergency/EmergencySelectionScreen';
-import ActiveEmergencyScreen from './src/screens/Emergency/ActiveEmergencyScreen';
+import EmergencySelectionScreen from './src/screens/Emergency/EmergencySelection';
+import ActiveEmergencyScreen from './src/screens/Emergency/ActiveEmergency';
 import EmergencyAlertScreen from './src/screens/Emergency/EmergencyAlertScreen';
 import NearbyAlertsScreen from './src/screens/Alerts/NearbyAlertsScreen';
+import TabNavigator from './src/navigation/TabNavigator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from './src/theme/theme';
 
@@ -37,7 +38,7 @@ export default function App() {
       try {
         const clienteId = await AsyncStorage.getItem('clienteId');
         if (clienteId) {
-          setInitialRoute('Home');
+          setInitialRoute('MainTabs');
         }
       } catch (error) {
         console.error('Error checking login state:', error);
@@ -70,6 +71,7 @@ export default function App() {
           <Stack.Screen name="Welcome" component={WelcomeScreen} />
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Register" component={RegisterScreen} />
+          <Stack.Screen name="MainTabs" component={TabNavigator} />
           <Stack.Screen name="Home" component={HomeScreen} />
           <Stack.Screen name="EmergencyContacts" component={EmergencyContactsScreen} />
           <Stack.Screen name="ContactDetails" component={ContactDetailsScreen} />
