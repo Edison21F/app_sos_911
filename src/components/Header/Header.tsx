@@ -5,11 +5,12 @@ import { ChevronLeft, Menu } from 'lucide-react-native';
 import { headerStyles } from './HeaderStyles';
 import { HeaderProps } from './types';
 
-const Header: React.FC<HeaderProps> = ({ 
-  onMenuPress, 
+const Header: React.FC<HeaderProps> = ({
+  onMenuPress,
   customTitle,
   showBackButton,
-  onBackPress 
+  onBackPress,
+  onTitlePress
 }) => {
   const route = useRoute();
 
@@ -33,8 +34,8 @@ const Header: React.FC<HeaderProps> = ({
         return 'Ubicación';
       case 'Information':
         return 'Información';
-        case 'Notifications':
-          return 'Notificaciónes';
+      case 'Notifications':
+        return 'Notificaciónes';
       default:
         return 'Inicio';
     }
@@ -53,9 +54,12 @@ const Header: React.FC<HeaderProps> = ({
           <Menu size={24} color="#FFFFFF" />
         )}
       </TouchableOpacity>
-      <Text numberOfLines={1} style={headerStyles.headerTitle}>
-        {getTitleByRoute()}
-      </Text>
+
+      <TouchableOpacity onPress={onTitlePress} disabled={!onTitlePress}>
+        <Text numberOfLines={1} style={headerStyles.headerTitle}>
+          {getTitleByRoute()}
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 };

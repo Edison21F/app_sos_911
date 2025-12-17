@@ -14,7 +14,8 @@ export interface Group {
   id: string;
   name: string;
   description: string;
-  members: GroupMember[];
+  members?: GroupMember[];
+  miembros: number;
   image?: ImageSourcePropType;
 }
 
@@ -26,7 +27,11 @@ export type RootStackParamList = {
   Home: undefined;
   MainTabs: undefined;
   Groups: undefined;
+  AddGroup: undefined;
   GroupChat: {
+    group: Group;
+  };
+  GroupDetails: {
     group: Group;
   };
   EmergencyContacts: undefined;

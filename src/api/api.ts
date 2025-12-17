@@ -3,8 +3,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Configuración de la instancia de Axios para el backend
 const api = axios.create({
-  baseURL: 'http://192.168.40.81:4000', // Dirección IP de tu computadora y puerto 1000
-  //baseURL: 'http://192.168.100.225:3000', // Dirección IP de tu computadora y puerto 1000
+  //baseURL: 'http://192.168.40.81:4000', // Dirección IP de tu computadora y puerto 1000
+  baseURL: 'http://192.168.100.225:4000', // Dirección IP de tu computadora y puerto 1000
   timeout: 10000, // Tiempo de espera para las solicitudes
   headers: {
     'Content-Type': 'application/json', // Tipo de contenido por defecto para las solicitudes

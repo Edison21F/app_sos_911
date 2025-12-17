@@ -4,4 +4,5 @@ export interface HeaderProps {
   customTitle?: string; // Opcional: permite sobreescribir el título automático
   showBackButton?: boolean;
   onBackPress?: () => void;
+  onTitlePress?: () => void;
 }

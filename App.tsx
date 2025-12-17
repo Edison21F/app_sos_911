@@ -12,7 +12,9 @@ import EmergencyContactsScreen from './src/screens/EmergencyContacts/EmergencyCo
 import ContactDetailsScreen from './src/screens/EmergencyContacts/Details/ContactDetails';
 import AddContactScreen from './src/screens/EmergencyContacts/Add/AddContact';
 import GroupsScreen from './src/screens/Groups/Groups';
+import AddGroupScreen from './src/screens/Groups/Add/AddGroup';
 import GroupChatScreen from './src/screens/Groups/Chat/GroupChat';
+import GroupDetailsScreen from './src/screens/Groups/Details/GroupDetails';
 import LocationScreen from './src/screens/Location/Location';
 import ProfileScreen from './src/screens/Profile/Profile';
 import InformationScreen from './src/screens/Information/Information';
@@ -27,11 +29,18 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from './src/theme/theme';
 
 
+import io, { Socket } from 'socket.io-client';
+import api from './src/api/api';
+import EmergencyAlertModal from './src/components/Modals/EmergencyAlertModal';
+
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
   const [initialRoute, setInitialRoute] = useState<keyof RootStackParamList>('Welcome');
   const [isLoading, setIsLoading] = useState(true);
+  const [alertData, setAlertData] = useState<any>(null);
+  const [isAlertVisible, setIsAlertVisible] = useState(false);
+  const socketRef = React.useRef<Socket | null>(null);
 
   useEffect(() => {
     const checkLoginState = async () => {
@@ -39,6 +48,7 @@ export default function App() {
         const clienteId = await AsyncStorage.getItem('clienteId');
         if (clienteId) {
           setInitialRoute('MainTabs');
+          setupSocket(clienteId);
         }
       } catch (error) {
         console.error('Error checking login state:', error);
@@ -48,7 +58,28 @@ export default function App() {
     };
 
     checkLoginState();
+
+    return () => {
+      if (socketRef.current) socketRef.current.disconnect();
+    };
   }, []);
+
+  const setupSocket = (userId: string) => {
+    // @ts-ignore
+    const baseURL = api.defaults.baseURL || 'http://192.168.100.225:4000';
+    socketRef.current = io(baseURL);
+
+    socketRef.current.on('connect', () => {
+      console.log('App Global Socket Connected');
+      socketRef.current?.emit('join', `user_${userId}`);
+    });
+
+    socketRef.current.on('alert:new', (newAlert: any) => {
+      console.log('Emergency Alert Received:', newAlert);
+      setAlertData(newAlert);
+      setIsAlertVisible(true);
+    });
+  };
 
   if (isLoading) {
     return (
@@ -77,7 +108,9 @@ export default function App() {
           <Stack.Screen name="ContactDetails" component={ContactDetailsScreen} />
           <Stack.Screen name="AddContact" component={AddContactScreen} />
           <Stack.Screen name="Groups" component={GroupsScreen} />
+          <Stack.Screen name="AddGroup" component={AddGroupScreen} />
           <Stack.Screen name="GroupChat" component={GroupChatScreen} />
+          <Stack.Screen name="GroupDetails" component={GroupDetailsScreen} />
           <Stack.Screen name="Profile" component={ProfileScreen} />
           <Stack.Screen name="Location" component={LocationScreen} />
           <Stack.Screen name="Notifications" component={NotificationsScreen} />
@@ -88,6 +121,12 @@ export default function App() {
           <Stack.Screen name="EmergencyAlert" component={EmergencyAlertScreen} />
           <Stack.Screen name="NearbyAlerts" component={NearbyAlertsScreen} />
         </Stack.Navigator>
+
+        <EmergencyAlertModal
+          visible={isAlertVisible}
+          onClose={() => setIsAlertVisible(false)}
+          alertData={alertData}
+        />
       </NavigationContainer>
     </SafeAreaProvider>
   );
