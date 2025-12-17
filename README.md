@@ -112,7 +112,7 @@ Se ha elegido una **Arquitectura en Capas** por las siguientes razones:
 ## ℹ️ Información General
 
 *   **Nombre:** app_sos_911
-*   **Versión:** 1.0.0
+*   **Versión:** 2.0.5
 *   **Framework:** Expo SDK 54
 *   **Navegación:** React Navigation 7
 *   **Cliente HTTP:** Axios
