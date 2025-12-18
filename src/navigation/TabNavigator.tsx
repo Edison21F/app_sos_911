@@ -94,7 +94,7 @@ const TabNavigator = () => {
                         <FontAwesome5 name="exclamation-triangle" size={30} color="#fff" />
                     ),
                     tabBarButton: (props) => (
-                        <CustomTabBarButton {...props} onPress={() => navigation.navigate('Home')} />
+                        <CustomTabBarButton {...props} />
                     ),
                     tabBarLabel: () => null
                 }}

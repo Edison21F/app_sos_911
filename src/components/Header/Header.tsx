@@ -44,22 +44,18 @@ const Header: React.FC<HeaderProps> = ({
   return (
     <View style={headerStyles.header}>
       <TouchableOpacity
-        onPress={showBackButton ? onBackPress : onMenuPress}
-        style={headerStyles.menuButton}
-        activeOpacity={0.7}
+        onPress={showBackButton ? onBackPress : undefined}
+        style={[headerStyles.menuButton, !showBackButton && { opacity: 0 }]} // Hide if no back button
+        activeOpacity={showBackButton ? 0.7 : 1}
+        disabled={!showBackButton}
       >
-        {showBackButton ? (
+        {showBackButton && (
           <ChevronLeft size={24} color="#FFFFFF" />
-        ) : (
-          <Menu size={24} color="#FFFFFF" />
         )}
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={onTitlePress} disabled={!onTitlePress}>
-        <Text numberOfLines={1} style={headerStyles.headerTitle}>
-          {getTitleByRoute()}
-        </Text>
-      </TouchableOpacity>
+      {/* Title Removed as per request */}
+      <View style={{ flex: 1 }} />
     </View>
   );
 };

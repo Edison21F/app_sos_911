@@ -8,6 +8,9 @@ import * as Location from 'expo-location';
 import AlertService, { ALERTA_TYPES } from '../../services/alert.service';
 import OfflineAlertService from '../../services/offlineAlert.service';
 import { theme } from '../../theme/theme'; // Adjust path if needed
+import { Modal, ScrollView, ActivityIndicator } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import api from '../../api/api';
 
 const ActiveEmergencyScreen = () => {
     const route = useRoute<any>();
@@ -22,6 +25,29 @@ const ActiveEmergencyScreen = () => {
         latitudeDelta: 0.005,
         longitudeDelta: 0.005,
     });
+
+    // Medical Modal
+    const [showMedicalModal, setShowMedicalModal] = useState(false);
+    const [medicalData, setMedicalData] = useState<any>(null);
+    const [loadingMedical, setLoadingMedical] = useState(false);
+
+    const fetchMedicalData = async () => {
+        try {
+            setLoadingMedical(true);
+            const id = await AsyncStorage.getItem('clienteId');
+            if (id) {
+                const res = await api.get(`/clientes/detalle/${id}`);
+                if (res.data && res.data.ficha_medica) {
+                    setMedicalData(res.data.ficha_medica);
+                }
+            }
+            setShowMedicalModal(true);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoadingMedical(false);
+        }
+    };
 
     useEffect(() => {
         // Obtener ubicación inicial
@@ -160,12 +186,58 @@ const ActiveEmergencyScreen = () => {
                     </Animated.View>
                 </View>
 
-                <TouchableOpacity style={styles.safeButton} onPress={handleStop}>
-                    <Text style={styles.safeButtonText}>ESTOY A SALVO</Text>
-                    <Text style={styles.safeButtonSub}>Desactivar Alerta</Text>
-                </TouchableOpacity>
+                <View style={{ width: '100%', alignItems: 'center' }}>
+                    <TouchableOpacity style={styles.medicalButton} onPress={fetchMedicalData}>
+                        <FontAwesome5 name="file-medical" size={20} color="#FFF" style={{ marginRight: 10 }} />
+                        <Text style={styles.medicalButtonText}>VER FICHA MÉDICA</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity style={styles.safeButton} onPress={handleStop}>
+                        <Text style={styles.safeButtonText}>ESTOY A SALVO</Text>
+                        <Text style={styles.safeButtonSub}>Desactivar Alerta</Text>
+                    </TouchableOpacity>
+                </View>
 
             </SafeAreaView>
+
+            <Modal visible={showMedicalModal} transparent animationType="slide">
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Ficha Médica</Text>
+                            <TouchableOpacity onPress={() => setShowMedicalModal(false)}>
+                                <Feather name="x-circle" size={24} color="#FFF" />
+                            </TouchableOpacity>
+                        </View>
+
+                        {loadingMedical ? (
+                            <ActivityIndicator size="large" color={theme.colors.primary} />
+                        ) : (
+                            <ScrollView>
+                                <View style={styles.medItem}>
+                                    <Text style={styles.medLabel}>Tipo de Sangre</Text>
+                                    <Text style={styles.medValue}>{medicalData?.tipo_sangre || 'No especificado'}</Text>
+                                </View>
+                                <View style={styles.medItem}>
+                                    <Text style={styles.medLabel}>Alergias</Text>
+                                    <Text style={styles.medValue}>{medicalData?.alergias || 'Ninguna'}</Text>
+                                </View>
+                                <View style={styles.medItem}>
+                                    <Text style={styles.medLabel}>Padecimientos</Text>
+                                    <Text style={styles.medValue}>{medicalData?.padecimiento || 'Ninguno'}</Text>
+                                </View>
+                                <View style={styles.medItem}>
+                                    <Text style={styles.medLabel}>Medicamentos</Text>
+                                    <Text style={styles.medValue}>{medicalData?.medicamentos || 'Ninguno'}</Text>
+                                </View>
+                            </ScrollView>
+                        )}
+                        <TouchableOpacity style={styles.closeModalBtn} onPress={() => setShowMedicalModal(false)}>
+                            <Text style={styles.closeModalText}>CERRAR</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 };
@@ -261,6 +333,76 @@ const styles = StyleSheet.create({
     safeButtonSub: {
         color: '#666',
         fontSize: 13
+    },
+    medicalButton: {
+        flexDirection: 'row',
+        backgroundColor: 'rgba(52, 152, 219, 0.8)', // Azul semitransparente
+        paddingVertical: 12,
+        paddingHorizontal: 25,
+        borderRadius: 25,
+        marginBottom: 15,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.3)'
+    },
+    medicalButtonText: {
+        color: '#FFF',
+        fontWeight: 'bold',
+        fontSize: 16
+    },
+    // Modal Styles
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.85)',
+        justifyContent: 'center',
+        padding: 20
+    },
+    modalContent: {
+        backgroundColor: '#1E1E1E',
+        borderRadius: 20,
+        padding: 20,
+        maxHeight: '80%',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)'
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 20
+    },
+    modalTitle: {
+        color: '#FFF',
+        fontSize: 22,
+        fontWeight: 'bold'
+    },
+    medItem: {
+        marginBottom: 15,
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        padding: 15,
+        borderRadius: 10
+    },
+    medLabel: {
+        color: '#AAA',
+        fontSize: 12,
+        marginBottom: 5,
+        textTransform: 'uppercase'
+    },
+    medValue: {
+        color: '#FFF',
+        fontSize: 18,
+        fontWeight: '500'
+    },
+    closeModalBtn: {
+        marginTop: 20,
+        backgroundColor: '#333',
+        padding: 15,
+        borderRadius: 12,
+        alignItems: 'center'
+    },
+    closeModalText: {
+        color: '#FFF',
+        fontWeight: 'bold'
     }
 });
 

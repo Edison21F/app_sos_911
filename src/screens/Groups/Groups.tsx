@@ -11,8 +11,7 @@ import {
   ActivityIndicator
 } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import Header from '../../components/Header/Header';
-import CustomSidebar from '../../components/Sidebar/Sidebar';
+import GlobalHeaderWrapper from '../../components/Header/GlobalHeaderWrapper';
 import { GroupsScreenProps } from '../../navigation/Navigator';
 import styles from './GroupsStyles';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -32,7 +31,6 @@ interface Group {
 export const GroupsScreen: React.FC<GroupsScreenProps> = ({ navigation }) => {
   const [groups, setGroups] = useState<Group[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchGroups = async () => {
@@ -43,21 +41,6 @@ export const GroupsScreen: React.FC<GroupsScreenProps> = ({ navigation }) => {
       const response = await api.get('/grupos/listar', {
         params: { clienteId }
       });
-
-      // Filter? Or show all. Backend seems to list ALL groups in system based on code.
-      // I should probably filter by "am I a member?" on frontend if backend doesn't support it, 
-      // OR backend should support it.
-      // But getAllGroups query was: select * from groups.
-      // Let's assume for now we list all (public?) or filtered by code logic later.
-      // Actually, standard app behavior: List groups I am part of.
-      // I need an endpoint for "get my groups".
-      // But I can't change backend too much without reviewing entire files.
-      // Let's use /clientes_grupos/listar?clienteId=X (if it supports filtering by client).
-      // clientes_grupos.controller.js -> getAllClientGroups -> doesn't assume filter param.
-
-      // Temporary solution: Fetch all groups, and fetch my memberships, and filter?
-      // Or just fetch all groups and show them (maybe as directory?).
-      // Let's list ALL for now as per "getAllGroups" until we refine.
 
       setGroups(response.data.map((g: any) => ({
         id: g.id.toString(),
@@ -110,10 +93,6 @@ export const GroupsScreen: React.FC<GroupsScreenProps> = ({ navigation }) => {
           {item.miembros} {item.miembros === 1 ? 'miembro' : 'miembros'}
         </Text>
       </View>
-      {/* 
-      // Removed edit/delete buttons from list item for cleaner UI. 
-      // Use LongPress or Detail screen for actions.
-      */}
     </TouchableOpacity>
   );
 
@@ -125,10 +104,7 @@ export const GroupsScreen: React.FC<GroupsScreenProps> = ({ navigation }) => {
       end={{ x: 1, y: 1 }}
     >
       <SafeAreaView style={styles.container}>
-        <Header
-          onMenuPress={() => setSidebarOpen(true)}
-          customTitle="Mis Grupos"
-        />
+        <GlobalHeaderWrapper showBackButton={true} />
 
         {isLoading ? (
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -159,11 +135,6 @@ export const GroupsScreen: React.FC<GroupsScreenProps> = ({ navigation }) => {
         >
           <Ionicons name="add" size={32} color="#FFF" />
         </TouchableOpacity>
-
-        <CustomSidebar
-          isOpen={isSidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-        />
       </SafeAreaView>
     </LinearGradient>
   );

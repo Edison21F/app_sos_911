@@ -28,6 +28,8 @@ export const ALERTA_PRIORITIES = {
 
 class AlertService {
 
+    private activeAlertId: string | null = null;
+
     // Crear Alerta (Punto de entrada principal)
     async createEmergencyAlert(type: string, priority: string, location: { latitud: number, longitud: number }, detalles?: string) {
 
@@ -70,7 +72,11 @@ class AlertService {
             // ONLINE: Enviar a API
             try {
                 const response = await api.post('/alertas', alertPayload);
-                return { success: true, offline: false, data: response.data.data };
+                const createdAlert = response.data.data;
+                if (createdAlert && createdAlert._id) {
+                    this.activeAlertId = createdAlert._id;
+                }
+                return { success: true, offline: false, data: createdAlert };
             } catch (error) {
                 console.error('Error sending alert online, fallback to offline', error);
                 // Si falla el POST (por ej timeout), hacemos fallback a offline
@@ -84,7 +90,19 @@ class AlertService {
     // Cancelar/Resolver Alerta (Detiene comportamientos)
     async stopEmergency() {
         DeviceBehaviorService.stopBehaviors();
-        // Aquí podrías llamar al endpoint de updateStatus a 'CERRADA' si tienes el ID de la alerta activa
+
+        if (this.activeAlertId) {
+            try {
+                console.log('Closing active alert:', this.activeAlertId);
+                await api.patch(`/alertas/${this.activeAlertId}/estado`, {
+                    estado: 'CERRADA',
+                    comentario: 'Usuario indica estar a salvo (Estoy a Salvo)'
+                });
+                this.activeAlertId = null;
+            } catch (error) {
+                console.error('Error closing alert status:', error);
+            }
+        }
     }
 }
 

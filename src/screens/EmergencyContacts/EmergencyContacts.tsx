@@ -14,8 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import api from '../../api/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
-import CustomSidebar from '../../components/Sidebar/Sidebar';
-import Header from '../../components/Header/Header';
+import GlobalHeaderWrapper from '../../components/Header/GlobalHeaderWrapper';
 import { styles } from './EmergencyContactsStyles';
 import { theme } from '../../theme/theme';
 import { normalize } from '../../utils/dimensions';
@@ -34,7 +33,7 @@ const EmergencyContactsScreen: React.FC<{ navigation: any }> = ({ navigation }) 
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [requests, setRequests] = useState<any[]>([]); // New state for pending requests
   const [loading, setLoading] = useState(false);
-  const [isSidebarOpen, setSidebarOpen] = useState(false);
+
 
   // Fetch CONTACTS (Vinculados/Propios)
   const fetchContacts = async () => {
@@ -204,7 +203,7 @@ const EmergencyContactsScreen: React.FC<{ navigation: any }> = ({ navigation }) 
       end={{ x: 1, y: 1 }}
     >
       <SafeAreaView style={styles.safeArea}>
-        <Header onMenuPress={() => setSidebarOpen(true)} customTitle="Contactos de Emergencia" />
+        <GlobalHeaderWrapper showBackButton={true} />
         <ScrollView contentContainerStyle={styles.content}>
           {loading && <ActivityIndicator size="small" color="#fff" style={{ marginBottom: 10 }} />}
 
@@ -237,7 +236,7 @@ const EmergencyContactsScreen: React.FC<{ navigation: any }> = ({ navigation }) 
             <Plus size={normalize(28)} color="#FFF" />
           </LinearGradient>
         </TouchableOpacity>
-        <CustomSidebar isOpen={isSidebarOpen} onClose={() => setSidebarOpen(false)} />
+
       </SafeAreaView>
     </LinearGradient>
   );

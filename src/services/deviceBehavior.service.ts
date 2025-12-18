@@ -46,8 +46,8 @@ class DeviceBehaviorService {
     private async handleMedical() {
         // Vibración continua (Pattern)
         this.startVibrationPattern([500, 500], true);
-        // Sonido Moderado (TODO: Load actual file)
-        // await this.playSound(require('../../assets/sounds/medical.mp3'), true);
+        // Sonido Moderado
+        await this.playSound(require('../../assets/sounds/medical_alert.mp3'), true);
     }
 
     private async handleDanger() {
@@ -69,7 +69,7 @@ class DeviceBehaviorService {
         // Vibración Pesada
         this.startVibrationPattern([200, 100, 200, 100], true);
         // Sonido Fuerte
-        // await this.playSound(require('../../assets/sounds/alarm.mp3'), true);
+        await this.playSound(require('../../assets/sounds/siren.mp3'), true);
     }
 
     private async handleTraffic() {
@@ -77,6 +77,7 @@ class DeviceBehaviorService {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
         setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy), 500);
         // Sonido Continuo
+        await this.playSound(require('../../assets/sounds/traffic_alert.mp3'), true);
     }
 
     private async handlePreventive() {
@@ -133,17 +134,22 @@ class DeviceBehaviorService {
         } catch (e) { console.warn(e); }
     }
 
-    /*
     private async playSound(source: any, loop: boolean) {
         try {
+            await Audio.setAudioModeAsync({
+                allowsRecordingIOS: false,
+                playsInSilentModeIOS: true,
+                shouldDuckAndroid: true,
+                playThroughEarpieceAndroid: false,
+                staysActiveInBackground: true,
+            });
             const { sound } = await Audio.Sound.createAsync(source, { isLooping: loop });
             this.soundObject = sound;
             await sound.playAsync();
         } catch (error) {
-            console.error('Error playing sound', error);
+            console.log('Audio asset not found, skipping sound.');
         }
     }
-    */
 }
 
 export default new DeviceBehaviorService();

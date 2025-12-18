@@ -4,8 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CheckCircle, Heart, Eye } from 'lucide-react-native';
-import Header from "../../components/Header/Header";
-import CustomSidebar from "../../components/Sidebar/Sidebar";
+import GlobalHeaderWrapper from "../../components/Header/GlobalHeaderWrapper";
 import { styles, theme } from "./InformationStyles";
 import { normalize } from "../../utils/dimensions";
 
@@ -121,12 +120,7 @@ const InformationScreen = () => {
             style={styles.gradientContainer}
         >
             <SafeAreaView style={styles.safeArea}>
-                <Header
-                    showBackButton={true}
-                    onBackPress={() => navigation.goBack()}
-                    customTitle="Información"
-                    onMenuPress={() => { }}
-                />
+                <GlobalHeaderWrapper showBackButton={true} />
                 <ScrollView contentContainerStyle={styles.contentContainer}>
                     <View style={styles.header}>
                         <Text style={[styles.headerTitle, { fontFamily: contenido.fontFamily }]}>{contenido.mainTitle}</Text>

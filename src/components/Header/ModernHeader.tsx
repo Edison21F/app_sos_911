@@ -10,6 +10,8 @@ interface ModernHeaderProps {
     onNotificationPress: () => void;
     onProfilePress: () => void;
     profileImage?: string | null;
+    showBackButton?: boolean;
+    onBackPress?: () => void;
 }
 
 const ModernHeader: React.FC<ModernHeaderProps> = ({
@@ -18,7 +20,9 @@ const ModernHeader: React.FC<ModernHeaderProps> = ({
     onLogout,
     onNotificationPress,
     onProfilePress,
-    profileImage
+    profileImage,
+    showBackButton,
+    onBackPress
 }) => {
 
     // Get initials for avatar fallback
@@ -32,9 +36,17 @@ const ModernHeader: React.FC<ModernHeaderProps> = ({
     return (
         <View style={styles.container}>
             {/* Left Side: Greeting & Name */}
+            {/* Left Side: Greeting & Name */}
             <View style={styles.leftContainer}>
-                <Text style={styles.greetingText}>Bienvenido</Text>
-                <Text style={styles.nameText} numberOfLines={1}>{userName || 'Usuario'}</Text>
+                {showBackButton && (
+                    <TouchableOpacity onPress={onBackPress} style={{ marginRight: 15 }}>
+                        <Feather name="arrow-left" size={24} color="#FFF" />
+                    </TouchableOpacity>
+                )}
+                <View>
+                    <Text style={styles.greetingText}>Bienvenido</Text>
+                    <Text style={styles.nameText} numberOfLines={1}>{userName || 'Usuario'}</Text>
+                </View>
             </View>
 
             {/* Right Side: Actions */}
@@ -88,6 +100,8 @@ const styles = StyleSheet.create({
     leftContainer: {
         flex: 1,
         marginRight: 10,
+        flexDirection: 'row',
+        alignItems: 'center'
     },
     greetingText: {
         color: 'rgba(255, 255, 255, 0.6)',

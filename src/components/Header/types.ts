@@ -1,6 +1,6 @@
 // types.ts
 export interface HeaderProps {
-  onMenuPress: () => void;
+  onMenuPress?: () => void;
   customTitle?: string; // Opcional: permite sobreescribir el título automático
   showBackButton?: boolean;
   onBackPress?: () => void;

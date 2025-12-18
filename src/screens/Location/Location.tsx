@@ -12,8 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { styles } from './LocationStyles';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import SeeLocations from './SeeLocations/SeeLocations';
-import Header from '../../components/Header/Header';
-import CustomSidebar from '../../components/Sidebar/Sidebar';
+import GlobalHeaderWrapper from '../../components/Header/GlobalHeaderWrapper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../theme/theme';
 
@@ -26,7 +25,7 @@ type LocationScreenNavigationProp = NavigationProp<RootStackParamList>;
 
 const LocationScreen = () => {
   const navigation = useNavigation<LocationScreenNavigationProp>();
-  const [isSidebarOpen, setSidebarOpen] = useState(false);
+  // const [isSidebarOpen, setSidebarOpen] = useState(false); // Removed
   const [visibleLocations, setVisibleLocations] = useState<Location[]>([]);
   const [mapReady, setMapReady] = useState(false);
   const mapRef = useRef<MapView | null>(null);
@@ -127,10 +126,7 @@ const LocationScreen = () => {
     >
 
       <SafeAreaView style={styles.container}>
-        <Header
-          onMenuPress={() => setSidebarOpen(true)}
-          customTitle="Ubicación"
-        />
+        <GlobalHeaderWrapper showBackButton={true} />
 
         <View style={styles.content}>
           <View style={styles.mapContainer}>
@@ -178,11 +174,6 @@ const LocationScreen = () => {
         </View>
 
         {modalVisible && <SeeLocations closeModal={() => setModalVisible(false)} />}
-
-        <CustomSidebar
-          isOpen={isSidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-        />
       </SafeAreaView>
     </LinearGradient>
   );

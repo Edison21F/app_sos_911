@@ -106,7 +106,7 @@ const AlertCard = ({ alert, onUpdate }: { alert: Alert, onUpdate: () => void }) 
               }}
               onPress={handleFinalize}
             >
-              FINALIZAR ALERTA
+              ESTOY A SALVO
             </Text>
           </View>
         )}
@@ -156,7 +156,7 @@ const AlertHistoryComponent = ({ navigation }: { navigation: any }) => {
     >
       <SafeAreaView style={styles.container}>
 
-        <Header onMenuPress={() => setSidebarOpen(true)} customTitle="Historial de Alertas" />
+        <Header showBackButton={true} onBackPress={() => navigation.goBack()} customTitle="Historial de Alertas" />
 
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -175,8 +175,6 @@ const AlertHistoryComponent = ({ navigation }: { navigation: any }) => {
             </View>
           )}
         </ScrollView>
-
-        <CustomSidebar isOpen={isSidebarOpen} onClose={() => setSidebarOpen(false)} />
       </SafeAreaView>
     </LinearGradient>
   );

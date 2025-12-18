@@ -2,12 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, Linking, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme } from '../../theme/theme';
-import { ArrowLeft, MapPin, AlertTriangle, Navigation } from 'lucide-react-native';
+import { MapPin, AlertTriangle, Navigation } from 'lucide-react-native';
 import { normalize } from '../../utils/dimensions';
 import api from '../../api/api';
 import LocationService from '../../services/location.service';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/Navigator';
+import GlobalHeaderWrapper from '../../components/Header/GlobalHeaderWrapper';
 
 type NearbyAlertsScreenProps = {
     navigation: NativeStackNavigationProp<RootStackParamList, 'NearbyAlerts'>;
@@ -24,7 +25,7 @@ type AlertaCercana = {
         direccion_aproximada?: string;
     };
     fecha_creacion: string;
-    distancia?: number; // Calculado o venido del backend si usamos $geoNear con distanceField
+    distancia?: number;
 };
 
 const NearbyAlertsScreen: React.FC<NearbyAlertsScreenProps> = ({ navigation }) => {
@@ -48,8 +49,6 @@ const NearbyAlertsScreen: React.FC<NearbyAlertsScreenProps> = ({ navigation }) =
 
             setMyLocation({ lat: coords.latitude, lng: coords.longitude });
 
-            // Llamada al endpoint backend
-            // GET /alertas/cercanas?lat=...&lng=...&radio=5000
             const response = await api.get(`/alertas/cercanas`, {
                 params: {
                     lat: coords.latitude,
@@ -122,12 +121,7 @@ const NearbyAlertsScreen: React.FC<NearbyAlertsScreenProps> = ({ navigation }) =
 
     return (
         <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                    <ArrowLeft size={normalize(24)} color="#FFF" />
-                </TouchableOpacity>
-                <Text style={styles.title}>Alertas Cercanas</Text>
-            </View>
+            <GlobalHeaderWrapper showBackButton={true} />
 
             <FlatList
                 data={alertas}
@@ -153,22 +147,7 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#0F0F0F',
     },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: normalize(20),
-        backgroundColor: '#1A1A1A',
-        borderBottomWidth: 1,
-        borderBottomColor: '#333',
-    },
-    backButton: {
-        marginRight: normalize(15),
-    },
-    title: {
-        fontSize: normalize(20),
-        fontWeight: 'bold',
-        color: '#FFF',
-    },
+    // Removed legacy header styles
     listContent: {
         padding: normalize(20),
     },

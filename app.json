@@ -52,7 +52,8 @@
         "android.permission.ACCESS_BACKGROUND_LOCATION",
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_LOCATION"
-      ]
+      ],
+      "package": "com.edison21f.app_sos_911"
     },
     "web": {
       "favicon": "./assets/favicon.png"
