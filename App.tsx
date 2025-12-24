@@ -3,35 +3,35 @@ import { View, ActivityIndicator } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { RootStackParamList } from './src/navigation/Navigator';
-import WelcomeScreen from './src/screens/Welcome/Welcome';
-import LoginScreen from './src/screens/Auth/Login/Login';
-import RegisterScreen from './src/screens/Auth/Register/Register';
-import HomeScreen from './src/screens/Home/Home';
-import EmergencyContactsScreen from './src/screens/EmergencyContacts/EmergencyContacts';
-import ContactDetailsScreen from './src/screens/EmergencyContacts/Details/ContactDetails';
-import AddContactScreen from './src/screens/EmergencyContacts/Add/AddContact';
-import GroupsScreen from './src/screens/Groups/Groups';
-import AddGroupScreen from './src/screens/Groups/Add/AddGroup';
-import GroupChatScreen from './src/screens/Groups/Chat/GroupChat';
-import GroupDetailsScreen from './src/screens/Groups/Details/GroupDetails';
-import LocationScreen from './src/screens/Location/Location';
-import ProfileScreen from './src/screens/Profile/Profile';
-import InformationScreen from './src/screens/Information/Information';
-import NotificationsScreen from './src/screens/Notifications/Notifications';
-import AlertHistoryScreen from './src/screens/Details/AlertHistory';
-import EmergencySelectionScreen from './src/screens/Emergency/EmergencySelection';
-import ActiveEmergencyScreen from './src/screens/Emergency/ActiveEmergency';
-import EmergencyAlertScreen from './src/screens/Emergency/EmergencyAlertScreen';
-import NearbyAlertsScreen from './src/screens/Alerts/NearbyAlertsScreen';
-import TabNavigator from './src/navigation/TabNavigator';
+import { RootStackParamList } from './src/presentation/navigation/Navigator';
+import WelcomeScreen from './src/presentation/screens/Welcome/Welcome';
+import LoginScreen from './src/presentation/screens/Auth/Login/Login';
+import RegisterScreen from './src/presentation/screens/Auth/Register/Register';
+import HomeScreen from './src/presentation/screens/Home/Home';
+import EmergencyContactsScreen from './src/presentation/screens/EmergencyContacts/EmergencyContacts';
+import ContactDetailsScreen from './src/presentation/screens/EmergencyContacts/Details/ContactDetails';
+import AddContactScreen from './src/presentation/screens/EmergencyContacts/Add/AddContact';
+import GroupsScreen from './src/presentation/screens/Groups/Groups';
+import AddGroupScreen from './src/presentation/screens/Groups/Add/AddGroup';
+import GroupChatScreen from './src/presentation/screens/Groups/Chat/GroupChat';
+import GroupDetailsScreen from './src/presentation/screens/Groups/Details/GroupDetails';
+import LocationScreen from './src/presentation/screens/Location/Location';
+import ProfileScreen from './src/presentation/screens/Profile/Profile';
+import InformationScreen from './src/presentation/screens/Information/Information';
+import NotificationsScreen from './src/presentation/screens/Notifications/Notifications';
+import AlertHistoryScreen from './src/presentation/screens/Details/AlertHistory';
+import EmergencySelectionScreen from './src/presentation/screens/Emergency/EmergencySelection';
+import ActiveEmergencyScreen from './src/presentation/screens/Emergency/ActiveEmergency';
+import EmergencyAlertScreen from './src/presentation/screens/Emergency/EmergencyAlertScreen';
+import NearbyAlertsScreen from './src/presentation/screens/Alerts/NearbyAlertsScreen';
+import TabNavigator from './src/presentation/navigation/TabNavigator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { theme } from './src/theme/theme';
+import { theme } from './src/presentation/styles/theme';
 
 
 import io, { Socket } from 'socket.io-client';
-import api from './src/api/api';
-import EmergencyAlertModal from './src/components/Modals/EmergencyAlertModal';
+import client from './src/infrastructure/http/client';
+import EmergencyAlertModal from './src/presentation/components/Modals/EmergencyAlertModal';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -66,7 +66,7 @@ export default function App() {
 
   const setupSocket = (userId: string) => {
     // @ts-ignore
-    const baseURL = api.defaults.baseURL || 'http://192.168.100.225:4000';
+    const baseURL = client.defaults.baseURL || 'http://192.168.100.225:4000';
     socketRef.current = io(baseURL);
 
     socketRef.current.on('connect', () => {
