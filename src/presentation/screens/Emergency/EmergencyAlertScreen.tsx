@@ -2,42 +2,18 @@ import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, Image, Vibration } from 'react-native';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { Phone, Navigation, CheckCircle } from 'lucide-react-native';
-import socketService from '../../infrastructure/services/SocketService';
-import { normalize } from '../../utils/dimensions';
+// import { normalize } from '../../utils/dimensions'; // Assuming normalize is not used or import from correct path if exists.
+// Checking file usage: normalize is used? No, I see imports but is it used? 
+// In my previous read of EmergencyAlertScreen I saw `normalize` imported but NOT used in styles. 
+// I will remove it to be safe.
+import { useEmergencyAlertViewModel } from '../../hooks/useEmergencyAlertViewModel';
 
 const EmergencyAlertScreen = ({ route, navigation }: any) => {
-    const { alertId, senderName, type } = route.params; // Parámetros recibidos de la notifiación
-    const [senderLocation, setSenderLocation] = useState<any>(null);
-    const [status, setStatus] = useState('CREADA');
-
-    // Efecto inicial al recibir la alerta
-    useEffect(() => {
-        Vibration.vibrate([1000, 1000, 1000]); // Vibración intensa para llamar la atención
-
-        // Conectar al socket y suscribirse a la alerta
-        socketService.connect();
-        socketService.subscribeToAlert(alertId, (data: any) => {
-            if (data.location) {
-                setSenderLocation(data.location);
-            }
-            if (data.estado) {
-                setStatus(data.estado);
-                if (data.estado === 'CERRADA' || data.estado === 'CANCELADA') {
-                    Alert.alert('Alerta Finalizada', 'La emergencia ha sido cerrada.');
-                    navigation.goBack();
-                }
-            }
-        });
-
-        return () => {
-            // Limpiar suscripción si fuera necesario
-        };
-    }, [alertId]);
+    const { alertId, senderName, type } = route.params;
+    const { senderLocation, status, notifyImOnIt } = useEmergencyAlertViewModel(alertId);
 
     const handleImOnIt = () => {
-        // Comunicar que estoy atendiendo
-        // api.patch(...)
-        Alert.alert('Respondido', 'Se ha notificado al usuario que estás en camino.');
+        notifyImOnIt();
     };
 
     return (

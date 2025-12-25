@@ -4,26 +4,21 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  Image,
-  FlatList,
   SafeAreaView,
   Alert,
-  ImageBackground,
-  ImageSourcePropType,
   KeyboardAvoidingView,
   ActivityIndicator,
   Platform,
-  ScrollView
+  ScrollView,
+  StyleSheet
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import styles from './AddGroupStyles';
 import Header from '../../../components/Header/Header';
 import CustomSidebar from '../../../components/Sidebar/Sidebar';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { StackNavigationProp } from '@react-navigation/stack';
-import api from '../../../api/api';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAddGroupViewModel } from '../../../hooks/useAddGroupViewModel';
 
 interface AddGroupProps {
   navigation: StackNavigationProp<any>;
@@ -32,7 +27,8 @@ interface AddGroupProps {
 const AddGroup: React.FC<AddGroupProps> = ({ navigation }) => {
   const [activeTab, setActiveTab] = useState<'create' | 'join'>('create');
   const [isSidebarOpen, setSidebarOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
+
+  const { loading, createGroup, joinGroup } = useAddGroupViewModel(navigation);
 
   // Create State
   const [newGroupName, setNewGroupName] = useState('');
@@ -41,61 +37,12 @@ const AddGroup: React.FC<AddGroupProps> = ({ navigation }) => {
   // Join State
   const [joinCode, setJoinCode] = useState('');
 
-  const handleCreateGroup = async () => {
-    if (!newGroupName.trim()) {
-      Alert.alert('Error', 'Por favor ingresa un nombre para el grupo');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const clienteId = await AsyncStorage.getItem('clienteId');
-      if (!clienteId) throw new Error('No session');
-
-      const response = await api.post('/grupos/crear', {
-        clienteId,
-        nombre: newGroupName,
-        descripcion: newGroupDesc,
-      });
-
-      Alert.alert('Grupo Creado', `Código de acceso: ${response.data.codigo}`, [
-        { text: 'OK', onPress: () => navigation.goBack() }
-      ]);
-
-    } catch (error: any) {
-      console.error('Create group error:', error);
-      Alert.alert('Error', error.response?.data?.message || 'No se pudo crear el grupo');
-    } finally {
-      setLoading(false);
-    }
+  const handleCreateGroup = () => {
+    createGroup(newGroupName, newGroupDesc);
   };
 
-  const handleJoinGroup = async () => {
-    if (!joinCode.trim() || joinCode.length !== 6) {
-      Alert.alert('Error', 'Ingresa un código válido de 6 dígitos');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const clienteId = await AsyncStorage.getItem('clienteId');
-      if (!clienteId) throw new Error('No session');
-
-      const response = await api.post('/grupos/unirse', {
-        clienteId,
-        codigo: joinCode
-      });
-
-      Alert.alert('Éxito', `Te has unido al grupo "${response.data.nombre}"`, [
-        { text: 'Ir a Grupos', onPress: () => navigation.goBack() }
-      ]);
-
-    } catch (error: any) {
-      console.error('Join group error:', error);
-      Alert.alert('Error', error.response?.data?.message || 'No se pudo unir al grupo');
-    } finally {
-      setLoading(false);
-    }
+  const handleJoinGroup = () => {
+    joinGroup(joinCode);
   };
 
   return (
@@ -103,7 +50,7 @@ const AddGroup: React.FC<AddGroupProps> = ({ navigation }) => {
       colors={["#026b6b", "#2D353C"]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
-      style={styles.gradientContainer}
+      style={{ flex: 1 }}
     >
       <SafeAreaView style={styles.container}>
         <Header

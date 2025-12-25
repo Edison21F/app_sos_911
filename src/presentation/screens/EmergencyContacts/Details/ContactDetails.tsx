@@ -7,6 +7,7 @@ import {
   TextInput,
   SafeAreaView,
   Alert,
+  ActivityIndicator
 } from 'react-native';
 import { RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -15,7 +16,7 @@ import { styles } from './ContactDetailsStyles';
 import { Feather } from '@expo/vector-icons';
 import Header from '../../../components/Header/Header';
 import { LinearGradient } from 'expo-linear-gradient';
-// import axios from 'axios'; // Commented out
+import { useContactsViewModel } from '../../../hooks/useContactsViewModel';
 
 type ContactDetailsScreenRouteProp = RouteProp<RootStackParamList, 'ContactDetails'>;
 type ContactDetailsScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'ContactDetails'>;
@@ -27,14 +28,26 @@ type ContactDetailsProps = {
 
 const ContactDetailsScreen: React.FC<ContactDetailsProps> = ({ route, navigation }) => {
   const { contact } = route.params;
+  const { updateContact, deleteContact, isLoading } = useContactsViewModel();
   const [modalVisible, setModalVisible] = useState(false);
-  const [editedContact, setEditedContact] = useState(contact);
-  const [isSidebarOpen, setSidebarOpen] = useState(false); // This seems unused in this component, but keeping it for consistency.
-  const [loading, setLoading] = useState(false);
+  const loading = isLoading;
+  // Map contact (Entity) to Form State (Spanish)
+  const [editedContact, setEditedContact] = useState({
+    id: contact.id,
+    nombre: contact.name,
+    telefono: contact.phone,
+    descripcion: contact.relationship
+  });
+  const [isSidebarOpen, setSidebarOpen] = useState(false);
 
-  // Update editedContact if route.params.contact changes (e.g., after an update)
+  // Update editedContact if route.params.contact changes
   useEffect(() => {
-    setEditedContact(contact);
+    setEditedContact({
+      id: contact.id,
+      nombre: contact.name,
+      telefono: contact.phone,
+      descripcion: contact.relationship
+    });
   }, [contact]);
 
   const handleEdit = () => setModalVisible(true);
@@ -45,40 +58,22 @@ const ContactDetailsScreen: React.FC<ContactDetailsProps> = ({ route, navigation
       return;
     }
 
-    try {
-      setLoading(true);
+    const startUpdate = async () => {
+      // Map form fields to Entity fields
+      const success = await updateContact(editedContact.id, {
+        name: editedContact.nombre, // Mapped from state 'nombre'
+        phone: editedContact.telefono, // Mapped from state 'telefono'
+        relationship: editedContact.descripcion // Mapped from state 'descripcion'
+      });
 
-      // Simulate API call delay
-      setTimeout(() => {
-        // No actual axios call
-        // const csrfResponse = await axios.get('http://192.168.1.31:9000/csrf-token');
-        // const csrfToken = csrfResponse.data.csrfToken;
-
-        const updatedData = {
-          ...contact,
-          nombre: editedContact.nombre,
-          telefono: editedContact.telefono,
-          descripcion: editedContact.descripcion,
-        };
-
-        // Simulate successful update
-        setEditedContact(updatedData);
-
-
-
+      if (success) {
         setModalVisible(false);
-        Alert.alert('Éxito', 'Contacto actualizado correctamente');
-
-        // Regresar a la pantalla anterior automáticamente
-        navigation.goBack();
-        setLoading(false);
-      }, 1000); // Simulate network delay
-
-    } catch (error: any) {
-      console.error('Error al actualizar contacto (simulado):', error);
-      Alert.alert('Error', 'No se pudo actualizar el contacto (simulado)');
-      setLoading(false);
-    }
+        Alert.alert('Éxito', 'Contacto actualizado correctamente', [
+          { text: 'OK', onPress: () => navigation.goBack() }
+        ]);
+      }
+    };
+    startUpdate();
   };
 
   const getInitials = (nombre: string) => {
@@ -151,6 +146,7 @@ const ContactDetailsScreen: React.FC<ContactDetailsProps> = ({ route, navigation
                 value={editedContact.nombre}
                 onChangeText={(text) => setEditedContact({ ...editedContact, nombre: text })}
                 placeholder="Nombre"
+                placeholderTextColor="#ccc"
               />
               <TextInput
                 style={styles.input}
@@ -158,12 +154,14 @@ const ContactDetailsScreen: React.FC<ContactDetailsProps> = ({ route, navigation
                 onChangeText={(text) => setEditedContact({ ...editedContact, telefono: text })}
                 placeholder="Teléfono"
                 keyboardType="phone-pad"
+                placeholderTextColor="#ccc"
               />
               <TextInput
                 style={styles.input}
                 value={editedContact.descripcion}
                 onChangeText={(text) => setEditedContact({ ...editedContact, descripcion: text })}
                 placeholder="Descripción"
+                placeholderTextColor="#ccc"
               />
 
               <TouchableOpacity

@@ -1,79 +1,30 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
-  Image,
   FlatList,
   SafeAreaView,
-  TextInput,
   RefreshControl,
   ActivityIndicator
 } from 'react-native';
-import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import GlobalHeaderWrapper from '../../components/Header/GlobalHeaderWrapper';
 import { GroupsScreenProps } from '../../navigation/Navigator';
 import styles from './GroupsStyles';
 import { LinearGradient } from 'expo-linear-gradient';
-import { theme } from '../../theme/theme';
-import api from '../../api/api';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect } from '@react-navigation/native';
-
-interface Group {
-  id: string;
-  name: string;
-  description: string;
-  miembros: number;
-  image?: any;
-}
+import { theme } from '../../styles/theme';
+import { Group } from '../../../domain/entities/Group';
+import { useGroupsViewModel } from '../../hooks/useGroupsViewModel';
 
 export const GroupsScreen: React.FC<GroupsScreenProps> = ({ navigation }) => {
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-
-  const fetchGroups = async () => {
-    try {
-      const clienteId = await AsyncStorage.getItem('clienteId');
-      if (!clienteId) return;
-
-      const response = await api.get('/grupos/listar', {
-        params: { clienteId }
-      });
-
-      setGroups(response.data.map((g: any) => ({
-        id: g.id.toString(),
-        name: g.nombre,
-        description: g.descripcion,
-        miembros: g.miembros || 0,
-        image: null // Placeholder
-      })));
-    } catch (error) {
-      console.error('Error fetching groups:', error);
-    } finally {
-      setIsLoading(false);
-      setRefreshing(false);
-    }
-  };
-
-  useFocusEffect(
-    useCallback(() => {
-      fetchGroups();
-    }, [])
-  );
-
-  const onRefresh = React.useCallback(() => {
-    setRefreshing(true);
-    fetchGroups();
-  }, []);
+  const { groups, isLoading, refreshing, onRefresh } = useGroupsViewModel();
 
   const renderGroup = ({ item }: { item: Group }) => (
     <TouchableOpacity
       style={styles.groupItem}
       activeOpacity={0.8}
       onPress={() => {
-        // Navigate to Chat
         navigation.navigate('GroupChat', { group: item });
       }}
     >
@@ -90,7 +41,7 @@ export const GroupsScreen: React.FC<GroupsScreenProps> = ({ navigation }) => {
           {item.description}
         </Text>
         <Text style={styles.groupMembers}>
-          {item.miembros} {item.miembros === 1 ? 'miembro' : 'miembros'}
+          {item.memberCount} {item.memberCount === 1 ? 'miembro' : 'miembros'}
         </Text>
       </View>
     </TouchableOpacity>

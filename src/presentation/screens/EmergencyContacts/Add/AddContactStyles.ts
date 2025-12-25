@@ -1,5 +1,5 @@
 import { StyleSheet } from 'react-native';
-import { normalize } from '../../../utils/dimensions';
+import { normalize } from '../../../../shared/utils/dimensions';
 
 export const styles = StyleSheet.create({
   backgroundImage: {

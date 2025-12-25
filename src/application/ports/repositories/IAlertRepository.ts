@@ -1,8 +1,12 @@
-import { Alert, AlertLocation } from '../../domain/entities/Alert';
+import { Alert, AlertLocation } from '../../../domain/entities/Alert';
 
 export interface IAlertRepository {
-    sendAlert(type: Alert['type'], location: AlertLocation, groupId?: string): Promise<void>;
+    sendAlert(type: Alert['type'], location: AlertLocation, groupId?: string): Promise<Alert>;
     getActiveAlerts(): Promise<Alert[]>;
-    getAlertHistory(): Promise<Alert[]>;
+    getAlertHistory(userId?: string): Promise<Alert[]>;
+    getNotifications(userId: string): Promise<any[]>; // TODO: Define Notification Entity
+    getNearbyAlerts(lat: number, lng: number, radius: number): Promise<any[]>;
     cancelAlert(alertId: string): Promise<void>;
+    updateLocation(alertId: string, location: AlertLocation): Promise<void>;
+    updateAlertStatus(alertId: string, status: string, comment?: string): Promise<void>;
 }

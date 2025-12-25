@@ -1,5 +1,5 @@
 import { StyleSheet, Platform, StatusBar } from 'react-native';
-import { theme } from '../../theme/theme';
+import { theme } from '../../styles/theme';
 
 export default StyleSheet.create({
   container: {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import {
     View,
     Text,
@@ -8,19 +8,18 @@ import {
     SafeAreaView,
     ActivityIndicator,
     StyleSheet,
-    Alert,
-    Platform
+    Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
-import { theme } from '../../../theme/theme';
-import api from '../../../api/api';
+import { theme } from '../../../styles/theme';
+// import api removed
 import Header from '../../../components/Header/Header';
-import { GroupChatScreenProps } from '../../../navigation/Navigator'; // Reusing props type mostly or defining new
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../../navigation/Navigator';
+import { useGroupDetailsViewModel } from '../../../hooks/useGroupDetailsViewModel';
 
 type GroupDetailsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'GroupDetails'>;
 type GroupDetailsScreenRouteProp = RouteProp<RootStackParamList, 'GroupDetails'>;
@@ -38,43 +37,8 @@ interface Member {
 }
 
 const GroupDetails: React.FC<GroupDetailsProps> = ({ navigation, route }) => {
-    const { group } = route.params;
-    const [members, setMembers] = useState<Member[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [groupImage, setGroupImage] = useState<string | null>(group.image as any); // Type cast for now
-    // Actually group from params might not have image URL updated if we just fetch it.
-    // We should fetch full group details including fresh image and code.
-    const [fullGroup, setFullGroup] = useState<any>(null);
-
-    useEffect(() => {
-        fetchGroupDetails();
-        fetchMembers();
-    }, []);
-
-    const fetchGroupDetails = async () => {
-        try {
-            const response = await api.get(`/grupos/detalle/${group.id}`);
-            setFullGroup(response.data);
-            if (response.data.imagen) {
-                // Construct full URL if relative
-                const baseURL = api.defaults.baseURL || '';
-                setGroupImage(`${baseURL}${response.data.imagen}`);
-            }
-        } catch (error) {
-            console.error('Error fetching group details:', error);
-        }
-    };
-
-    const fetchMembers = async () => {
-        try {
-            const response = await api.get(`/grupos/miembros/${group.id}`);
-            setMembers(response.data);
-        } catch (error) {
-            console.error('Error fetching members:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+    const { group: initialGroup } = route.params;
+    const { group, members, isLoading, uploadImage, getImageUrl } = useGroupDetailsViewModel(initialGroup);
 
     const pickImage = async () => {
         const result = await ImagePicker.launchImageLibraryAsync({
@@ -85,37 +49,17 @@ const GroupDetails: React.FC<GroupDetailsProps> = ({ navigation, route }) => {
         });
 
         if (!result.canceled) {
-            uploadImage(result.assets[0].uri);
-        }
-    };
-
-    const uploadImage = async (uri: string) => {
-        const formData = new FormData();
-        const filename = uri.split('/').pop();
-        const match = /\.(\w+)$/.exec(filename || '');
-        const type = match ? `image/${match[1]}` : `image`;
-
-        formData.append('image', { uri, name: filename, type } as any);
-
-        try {
-            setLoading(true);
-            const response = await api.post(`/grupos/foto/${group.id}`, formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
-            });
-            Alert.alert('Éxito', 'Foto de grupo actualizada');
-            fetchGroupDetails(); // Refresh
-        } catch (error) {
-            Alert.alert('Error', 'No se pudo subir la imagen');
-            console.error(error);
-        } finally {
-            setLoading(false);
+            try {
+                await uploadImage(result.assets[0].uri);
+                Alert.alert('Éxito', 'Foto de grupo actualizada');
+            } catch (error) {
+                Alert.alert('Error', 'No se pudo subir la imagen');
+            }
         }
     };
 
     const renderMember = ({ item }: { item: Member }) => {
-        // Fix photo URL
-        const baseURL = api.defaults.baseURL || '';
-        const photoUrl = item.foto ? `${baseURL}${item.foto}` : null;
+        const photoUrl = getImageUrl(item.foto);
 
         return (
             <View style={styles.memberItem}>
@@ -149,8 +93,8 @@ const GroupDetails: React.FC<GroupDetailsProps> = ({ navigation, route }) => {
                 <View style={styles.content}>
                     <View style={styles.headerInfo}>
                         <TouchableOpacity onPress={pickImage} style={styles.imageContainer}>
-                            {fullGroup?.imagen ? (
-                                <Image source={{ uri: `${api.defaults.baseURL}${fullGroup.imagen}` }} style={styles.groupImage} />
+                            {group.image ? (
+                                <Image source={{ uri: getImageUrl(group.image) || '' }} style={styles.groupImage} />
                             ) : (
                                 <View style={[styles.groupImage, { backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' }]}>
                                     <Ionicons name="camera" size={40} color="#fff" />
@@ -161,20 +105,21 @@ const GroupDetails: React.FC<GroupDetailsProps> = ({ navigation, route }) => {
                             </View>
                         </TouchableOpacity>
 
-                        <Text style={styles.groupName}>{fullGroup?.nombre || group.name}</Text>
-                        <Text style={styles.groupDesc}>{fullGroup?.descripcion || 'Sin descripción'}</Text>
+                        <Text style={styles.groupName}>{group.name}</Text>
+                        <Text style={styles.groupDesc}>{group.description || 'Sin descripción'}</Text>
 
-                        {fullGroup?.codigo && (
+                        {/* Code is not in standard Group entity, need to check if mapToGroup includes it or if we need to extend Group entity */}
+                        {(group as any).codigo && (
                             <View style={styles.codeContainer}>
                                 <Text style={styles.codeLabel}>Código de Acceso:</Text>
-                                <Text style={styles.codeValue}>{fullGroup.codigo}</Text>
+                                <Text style={styles.codeValue}>{(group as any).codigo}</Text>
                             </View>
                         )}
                     </View>
 
                     <Text style={styles.sectionTitle}>Miembros ({members.length})</Text>
 
-                    {loading ? (
+                    {isLoading ? (
                         <ActivityIndicator color="#fff" style={{ marginTop: 20 }} />
                     ) : (
                         <FlatList

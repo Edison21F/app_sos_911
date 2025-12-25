@@ -1,7 +1,7 @@
 // RegisterStyles.ts
 
 import { StyleSheet, Dimensions, Platform } from 'react-native';
-import { theme } from '../../../theme/theme';
+import { theme } from '../../../styles/theme';
 
 const { width, height } = Dimensions.get('window');
 

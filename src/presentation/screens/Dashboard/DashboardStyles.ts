@@ -1,6 +1,6 @@
 import { StyleSheet } from 'react-native';
-import { theme } from '../../theme/theme';
-import { normalize } from '../../utils/dimensions';
+import { theme } from '../../styles/theme';
+import { normalize } from '../../../shared/utils/dimensions';
 
 export const styles = StyleSheet.create({
     container: {

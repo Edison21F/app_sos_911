@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
-import { theme } from '../../theme/theme';
+import { theme } from '../../styles/theme';
 
 interface ModernHeaderProps {
     userName: string;

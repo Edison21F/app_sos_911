@@ -1,23 +1,12 @@
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
-import { Contact } from '../screens/EmergencyContacts/types';
+import { Contact } from '../../domain/entities/Contact';
 import { ImageSourcePropType } from 'react-native';
 
-// Interfaces para los grupos
-export interface GroupMember {
-  id: string;
-  name: string;
-  image: ImageSourcePropType;
-}
+import { Group } from '../../domain/entities/Group';
 
-export interface Group {
-  id: string;
-  name: string;
-  description: string;
-  members?: GroupMember[];
-  miembros: number;
-  image?: ImageSourcePropType;
-}
+// Interfaces para los grupos
+// Local definitions removed in favor of Domain Entity
 
 // Definición de los parámetros de navegación para toda la aplicación
 export type RootStackParamList = {

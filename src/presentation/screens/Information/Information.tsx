@@ -6,7 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { CheckCircle, Heart, Eye } from 'lucide-react-native';
 import GlobalHeaderWrapper from "../../components/Header/GlobalHeaderWrapper";
 import { styles, theme } from "./InformationStyles";
-import { normalize } from "../../utils/dimensions";
+import { normalize } from '../../../shared/utils/dimensions';
 
 // Tipos para el contenido global
 interface Section {

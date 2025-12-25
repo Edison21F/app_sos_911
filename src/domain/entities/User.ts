@@ -7,5 +7,6 @@ export interface User {
     birthDate: string;
     status?: 'active' | 'inactive' | 'deleted';
     helpCount?: number;
+    profileImage?: string;
     // We intentionally omit password_hash for security in the domain model
 }

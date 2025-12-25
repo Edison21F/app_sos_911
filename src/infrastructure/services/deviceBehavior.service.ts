@@ -4,9 +4,9 @@ import * as Brightness from 'expo-brightness';
 import { Platform } from 'react-native';
 import { Audio } from 'expo-av';
 
-type AlertType = 'MEDICAL' | 'DANGER' | 'FIRE' | 'TRAFFIC' | 'PREVENTIVE';
+import { IDeviceService, BehaviorType } from '../../application/ports/services/IDeviceService';
 
-class DeviceBehaviorService {
+export class DeviceBehaviorService implements IDeviceService {
     private soundObject: Audio.Sound | null = null;
     private isBehaving = false;
 
@@ -15,7 +15,7 @@ class DeviceBehaviorService {
     // Asegúrate de tener archivos de sonido o usar una URL remota temporalmente.
     // Usaremos valores por defecto de sistema para MVP si no hay assets.
 
-    async triggerBehavior(type: AlertType) {
+    async triggerBehavior(type: BehaviorType) {
         if (this.isBehaving) this.stopBehaviors();
         this.isBehaving = true;
 
@@ -48,7 +48,7 @@ class DeviceBehaviorService {
         // Vibración continua (Pattern)
         this.startVibrationPattern([500, 500], true);
         // Sonido Moderado
-        await this.playSound(require('../../assets/sounds/medical_alert.mp3'), true);
+        await this.playSound(require('../../../assets/sounds/medical_alert.mp3'), true);
     }
 
     private async handleDanger() {
@@ -70,7 +70,7 @@ class DeviceBehaviorService {
         // Vibración Pesada
         this.startVibrationPattern([200, 100, 200, 100], true);
         // Sonido Fuerte
-        await this.playSound(require('../../assets/sounds/siren.mp3'), true);
+        await this.playSound(require('../../../assets/sounds/siren.mp3'), true);
     }
 
     private async handleTraffic() {
@@ -78,7 +78,7 @@ class DeviceBehaviorService {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
         setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy), 500);
         // Sonido Continuo
-        await this.playSound(require('../../assets/sounds/traffic_alert.mp3'), true);
+        await this.playSound(require('../../../assets/sounds/traffic_alert.mp3'), true);
     }
 
     private async handlePreventive() {
@@ -153,4 +153,4 @@ class DeviceBehaviorService {
     }
 }
 
-export default new DeviceBehaviorService();
+

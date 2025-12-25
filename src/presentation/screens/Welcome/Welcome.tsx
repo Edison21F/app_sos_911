@@ -9,22 +9,13 @@ import { LoginStyles as styles } from '../Auth/Login/LoginStyles';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Application from 'expo-application';
 import { Platform } from 'react-native';
-import api from '../../../infrastructure/http/client';
+import { useAuthViewModel } from '../../hooks/useAuthViewModel';
 import { theme } from '../../styles/theme';
-
-const getDeviceId = async () => {
-  if (Platform.OS === 'android') {
-    return await Application.getAndroidId();
-  } else if (Platform.OS === 'ios') {
-    return await Application.getIosIdForVendorAsync();
-  }
-  return null;
-};
 
 export default function WelcomeScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const pulseAnim = React.useRef(new Animated.Value(1)).current;
-  const [csrfToken, setCsrfToken] = useState('');
+  const { getCsrfToken } = useAuthViewModel();
 
   React.useEffect(() => {
     Animated.loop(
@@ -45,39 +36,8 @@ export default function WelcomeScreen() {
 
   // Obtener el token CSRF al montar el componente
   React.useEffect(() => {
-    const fetchCsrfToken = async () => {
-      try {
-        // Limpiar tokens antiguos antes de obtener uno nuevo
-        await AsyncStorage.removeItem('csrfToken');
-        await AsyncStorage.removeItem('sessionCookie');
-
-        // Usar la instancia api configurada
-        const response = await api.get('/csrf-token');
-        const token = response.data.csrfToken;
-
-        if (token) {
-          setCsrfToken(token);
-          await AsyncStorage.setItem('csrfToken', token);
-
-          // Capturar y guardar la cookie de sesión (SOLO nombre=valor)
-          const setCookieHeader = response.headers['set-cookie'];
-          if (setCookieHeader) {
-            let cookieValue = Array.isArray(setCookieHeader) ? setCookieHeader.join('; ') : setCookieHeader;
-            // Extraer solo la parte nombre=valor (antes del primer punto y coma)
-            if (cookieValue) {
-              cookieValue = cookieValue.split(';')[0];
-            }
-            await AsyncStorage.setItem('sessionCookie', cookieValue);
-            console.log('Cookie de sesión guardada (limpia):', cookieValue);
-          }
-        }
-      } catch (error) {
-        console.error('Error obteniendo CSRF token:', error);
-        setCsrfToken('');
-      }
-    };
-    fetchCsrfToken();
-  }, []);
+    getCsrfToken();
+  }, [getCsrfToken]);
 
   const handleSosPress = () => {
     Alert.alert('Atención', 'Por favor, regístrate o inicia sesión para usar la alerta SOS');

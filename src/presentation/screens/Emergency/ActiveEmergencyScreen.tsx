@@ -1,90 +1,32 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, Vibration, Animated } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
-import * as Location from 'expo-location';
-import { Lock, Navigation, Phone, ShieldCheck } from 'lucide-react-native';
-import socketService from '../../services/socket.service';
-import locationService from '../../services/location.service';
-import api from '../../api/api';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { normalize } from '../../utils/dimensions';
+import { Phone, ShieldCheck } from 'lucide-react-native';
+import { useActiveEmergencyViewModel } from '../../hooks/useActiveEmergencyViewModel';
 
 const ActiveEmergencyScreen = ({ route, navigation }: any) => {
-    const { type } = route.params;
-    const [countdown, setCountdown] = useState(3);
-    const [isActive, setIsActive] = useState(false);
-    const [location, setLocation] = useState<any>(null);
-    const [alertData, setAlertData] = useState<any>(null);
-    const pulseAnim = useRef(new Animated.Value(1)).current;
+    const { type } = route.params; // Expecting { id: string, label: string, color: string, priority: string }
 
-    // Countdown Logic
-    useEffect(() => {
-        if (countdown > 0) {
-            const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-            return () => clearTimeout(timer);
-        } else if (countdown === 0 && !isActive) {
-            startEmergency();
-        }
-    }, [countdown, isActive]);
+    const { status, countdown, location, cancelEmergency } = useActiveEmergencyViewModel(type.id);
+
+    const pulseAnim = useRef(new Animated.Value(1)).current;
 
     // Pulse Animation
     useEffect(() => {
-        if (isActive) {
+        if (status === 'active') {
+            Vibration.vibrate([500, 500, 500]); // Vibrate on start
             Animated.loop(
                 Animated.sequence([
                     Animated.timing(pulseAnim, { toValue: 1.2, duration: 500, useNativeDriver: true }),
                     Animated.timing(pulseAnim, { toValue: 1, duration: 500, useNativeDriver: true })
                 ])
             ).start();
+        } else {
+            pulseAnim.setValue(1);
         }
-    }, [isActive]);
+    }, [status]);
 
-    const startEmergency = async () => {
-        setIsActive(true);
-        Vibration.vibrate([500, 500, 500]); // Vibración fuerte
-
-        try {
-            // 1. Obtener ubicación
-            const loc = await locationService.getCurrentLocation();
-            setLocation(loc);
-
-            // 2. Crear Alerta en Backend
-            const storedId = await AsyncStorage.getItem('clienteId');
-            const userId = storedId || 'GUEST';
-
-            console.log('Iniciando alerta para UserID:', userId);
-
-            const response = await api.post('/alertas', {
-                idUsuarioSql: userId, // ID real
-                tipo: type.id,
-                prioridad: type.priority,
-                ubicacion: {
-                    latitud: loc.latitude,
-                    longitud: loc.longitude
-                },
-                detalles: `Emergencia iniciada: ${type.label}`
-            });
-
-            const newAlert = response.data.data;
-            setAlertData(newAlert);
-
-            // 3. Conectar al Socket y emitir
-            socketService.connect(userId);
-            socketService.emitLocation(newAlert._id, { latitude: loc.latitude, longitude: loc.longitude });
-
-            // 4. Iniciar tracking constante
-            locationService.watchLocation((newLoc) => {
-                setLocation(newLoc);
-                socketService.emitLocation(newAlert._id, { latitude: newLoc.latitude, longitude: newLoc.longitude });
-            });
-
-        } catch (error) {
-            console.error('Error creando alerta:', error);
-            Alert.alert('Error', 'No se pudo activar la alerta en el servidor. Intentando modo local.');
-        }
-    };
-
-    const cancelEmergency = () => {
+    const handleCancel = () => {
         Alert.alert(
             'Cancelar Emergencia',
             '¿Estás seguro? Se notificará que estás a salvo.',
@@ -93,10 +35,7 @@ const ActiveEmergencyScreen = ({ route, navigation }: any) => {
                 {
                     text: 'Sí, estoy a salvo',
                     onPress: async () => {
-                        // Notificar cierre
-                        if (alertData?._id) {
-                            await api.patch(`/alertas/${alertData._id}/estado`, { estado: 'CERRADA' });
-                        }
+                        await cancelEmergency();
                         navigation.navigate('Home');
                     }
                 }
@@ -104,7 +43,7 @@ const ActiveEmergencyScreen = ({ route, navigation }: any) => {
         );
     };
 
-    if (countdown > 0) {
+    if (status === 'preparing') {
         return (
             <View style={[styles.container, styles.centered]}>
                 <Text style={styles.countdownText}>{countdown}</Text>
@@ -159,7 +98,7 @@ const ActiveEmergencyScreen = ({ route, navigation }: any) => {
                 </TouchableOpacity>
 
                 {/* Botón "Estoy a salvo" gigante */}
-                <TouchableOpacity style={styles.safeButton} onPress={cancelEmergency}>
+                <TouchableOpacity style={styles.safeButton} onPress={handleCancel}>
                     <ShieldCheck size={32} color="#FFF" />
                     <Text style={styles.safeButtonText}>ESTOY A SALVO</Text>
                     <Text style={styles.safeSubText}>Presiona para finalizar</Text>

@@ -2,26 +2,32 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../http/client';
 import NetInfo from '@react-native-community/netinfo';
 import { Alert } from 'react-native';
-
-const OFFLINE_QUEUE_KEY = 'offline_alerts_queue';
+import { IOfflineAlertService } from '../../application/ports/services/IOfflineAlertService';
 
 export interface AlertData {
-    id_local: string; // UUID generado en cliente
+    idUsuarioSql: string;
     tipo: string;
     prioridad: string;
-    ubicacion: { latitud: number; longitud: number };
-    detalles?: string;
+    ubicacion: { latitud: number, longitud: number };
+    detalles: string;
     fecha_creacion: number;
+    emitida_offline: boolean;
+    id_local: string;
 }
 
-class OfflineAlertService {
+import { IAlertRepository } from '../../application/ports/repositories/IAlertRepository';
+
+export class OfflineAlertService implements IOfflineAlertService {
+    private STORAGE_KEY = 'PENDING_ALERTS';
+
+
 
     // Guardar alerta en cola local
     async queueAlert(alertData: AlertData) {
         try {
             const currentQueue = await this.getQueue();
             currentQueue.push(alertData);
-            await AsyncStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(currentQueue));
+            await AsyncStorage.setItem(this.STORAGE_KEY, JSON.stringify(currentQueue));
             console.log(`[OfflineService] Alerta guardada localmente. Total en cola: ${currentQueue.length}`);
             Alert.alert('Modo Offline', 'Alerta guardada. Se enviará automáticamente cuando recuperes conexión.');
         } catch (error) {
@@ -32,7 +38,7 @@ class OfflineAlertService {
     // Obtener cola actual
     async getQueue(): Promise<AlertData[]> {
         try {
-            const json = await AsyncStorage.getItem(OFFLINE_QUEUE_KEY);
+            const json = await AsyncStorage.getItem(this.STORAGE_KEY);
             return json ? JSON.parse(json) : [];
         } catch (error) {
             return [];
@@ -41,7 +47,7 @@ class OfflineAlertService {
 
     // Limpiar cola
     async clearQueue() {
-        await AsyncStorage.removeItem(OFFLINE_QUEUE_KEY);
+        await AsyncStorage.removeItem(this.STORAGE_KEY);
     }
 
     // Intentar sincronizar (Llamar cuando NetInfo detecte conexión)
@@ -74,4 +80,4 @@ class OfflineAlertService {
     }
 }
 
-export default new OfflineAlertService();
+

@@ -21,8 +21,8 @@ import { Notification, NotificationsProps } from './types';
 import { normalize } from '../../../shared/utils/dimensions';
 import MapView, { Marker } from 'react-native-maps';
 import { LinearGradient } from 'expo-linear-gradient';
-import api from '../../../infrastructure/http/client';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+// import api removed
+// import AsyncStorage removed
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -104,8 +104,10 @@ const NotificationCard: React.FC<{
   );
 };
 
+import { useNotificationsViewModel } from '../../hooks/useNotificationsViewModel';
+
 const NotificationsScreen: React.FC<NotificationsProps> = ({ navigation }) => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const { notifications, loading, refreshing, refresh, setNotifications } = useNotificationsViewModel();
   const [mapLocation, setMapLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 
   // Rating State
@@ -115,42 +117,11 @@ const NotificationsScreen: React.FC<NotificationsProps> = ({ navigation }) => {
   const [calificacionTipo, setCalificacionTipo] = useState<'sos' | '911' | 'unnecessary' | null>(null);
   const [calificacionMensaje, setCalificacionMensaje] = useState('');
 
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
-  const fetchNotifications = async () => {
-    try {
-      const clienteId = await AsyncStorage.getItem('clienteId');
-      if (!clienteId) return;
-
-      const response = await api.get(`/alertas/notificaciones/${clienteId}`);
-      if (response.data.success) {
-        const backendData = response.data.data.map((alerta: any) => ({
-          id: alerta._id,
-          title: `Alerta: ${alerta.tipo || 'GENERAL'}`,
-          description: alerta.detalles || 'Sin detalles adicionales',
-          time: alerta.fecha_creacion ? format(new Date(alerta.fecha_creacion), "d MMMM, h:mm a", { locale: es }) : 'Reciente',
-          type: 'clientes',
-          status: 'pending', // Could be dynamic
-          location: {
-            latitude: alerta.ubicacion?.latitud || 0,
-            longitude: alerta.ubicacion?.longitud || 0
-          },
-          responseComment: ''
-        }));
-        setNotifications(backendData);
-      }
-    } catch (error) {
-      console.error('Error:', error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
-  useEffect(() => { fetchNotifications(); }, []);
-
-  const onRefresh = () => { setRefreshing(true); fetchNotifications(); };
+  const onRefresh = () => { refresh(); };
 
   // Rating Handlers
   const handleCalificar = (notification: Notification) => {
@@ -169,7 +140,7 @@ const NotificationsScreen: React.FC<NotificationsProps> = ({ navigation }) => {
   const handleEnviarCalificacion = () => {
     if (!selectedNotification || !calificacionTipo) return;
     // Optimistic Update
-    setNotifications(prev => prev.map(n => n.id === selectedNotification.id ? { ...n, status: calificacionTipo } : n));
+    setNotifications((prev: Notification[]) => prev.map((n: Notification) => n.id === selectedNotification.id ? { ...n, status: calificacionTipo } : n));
     setShowCalificarModal(false);
     // Here you would typically call API to save response
   };
@@ -191,7 +162,7 @@ const NotificationsScreen: React.FC<NotificationsProps> = ({ navigation }) => {
           {loading ? (
             <ActivityIndicator size="large" color="#FF9E5D" style={{ marginTop: 50 }} />
           ) : notifications.length > 0 ? (
-            notifications.map((item, index) => (
+            notifications.map((item: Notification, index: number) => (
               <NotificationCard
                 key={item.id}
                 index={index}

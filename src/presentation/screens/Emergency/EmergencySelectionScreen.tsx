@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, Vibration } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ambulance, Flame, ShieldAlert, Car, Eye } from 'lucide-react-native';
-import { normalize } from '../../utils/dimensions';
+import { normalize } from '../../../shared/utils/dimensions';
 
 const EMERGENCY_TYPES = [
     { id: 'MEDICA', label: 'Emergencia Médica', icon: Ambulance, color: '#E74C3C', priority: 'CRITICA' },

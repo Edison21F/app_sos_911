@@ -1,6 +1,6 @@
 // Importamos StyleSheet desde React Native para definir los estilos
 import { StyleSheet, Dimensions } from 'react-native';
-import { theme } from '../../../theme/theme';
+import { theme } from '../../../styles/theme';
 
 const { width } = Dimensions.get('window');
 

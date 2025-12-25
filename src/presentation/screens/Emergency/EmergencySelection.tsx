@@ -4,54 +4,17 @@ import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Location from 'expo-location';
 import { Feather, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
-import AlertService, { ALERTA_TYPES, ALERTA_PRIORITIES } from '../../services/alert.service';
-import { theme } from '../../theme/theme';
+import { useEmergencySelectionViewModel } from '../../hooks/useEmergencySelectionViewModel';
+import { theme } from '../../styles/theme';
 
 const EmergencySelectionScreen = () => {
     const navigation = useNavigation<any>();
-    const [loading, setLoading] = useState(false);
-    const [location, setLocation] = useState<{ latitud: number, longitud: number } | null>(null);
+    const { loading, location, startEmergency } = useEmergencySelectionViewModel();
 
-    useEffect(() => {
-        (async () => {
-            let { status } = await Location.requestForegroundPermissionsAsync();
-            if (status !== 'granted') {
-                Alert.alert('Permiso denegado', 'Se necesita ubicación para emergencias.');
-                return;
-            }
-
-            let location = await Location.getCurrentPositionAsync({});
-            setLocation({
-                latitud: location.coords.latitude,
-                longitud: location.coords.longitude
-            });
-        })();
-    }, []);
+    // Location logic moved to ViewModel
 
     const handleEmergency = async (type: string, priority: string, title: string) => {
-        if (!location) {
-            Alert.alert('Esperando ubicación...', 'Por favor espera a que obtengamos tu ubicación.');
-            // Opcional: Permitir enviar sin ubicación precisa o usar la última conocida
-            return;
-        }
-
-        setLoading(true);
-        try {
-            const result = await AlertService.createEmergencyAlert(type, priority, location);
-
-            setLoading(false);
-            // Navegar a pantalla de alerta activa pasando datos
-            navigation.navigate('ActiveEmergency', {
-                type: type,
-                alertData: result.data,
-                isOffline: result.offline
-            });
-
-        } catch (error) {
-            setLoading(false);
-            console.error(error);
-            Alert.alert('Error', 'No se pudo activar la alerta');
-        }
+        await startEmergency(type as any, priority);
     };
 
     const EmergencyButton = ({ icon, label, type, priority, color, subLabel }: any) => (
@@ -88,8 +51,8 @@ const EmergencySelectionScreen = () => {
                         icon={<FontAwesome5 name="heartbeat" size={32} color="#fff" />}
                         label="Médica"
                         subLabel="Salud, Heridas"
-                        type={ALERTA_TYPES.MEDICAL}
-                        priority={ALERTA_PRIORITIES.ALTA}
+                        type="MEDICA"
+                        priority="ALTA"
                         color="#E53935" // Red
                     />
 
@@ -97,8 +60,8 @@ const EmergencySelectionScreen = () => {
                         icon={<FontAwesome5 name="fire" size={32} color="#fff" />}
                         label="Incendio"
                         subLabel="Fuego, Explosión"
-                        type={ALERTA_TYPES.FIRE}
-                        priority={ALERTA_PRIORITIES.CRITICA}
+                        type="INCENDIO"
+                        priority="CRITICA"
                         color="#FB8C00" // Orange
                     />
 
@@ -106,8 +69,8 @@ const EmergencySelectionScreen = () => {
                         icon={<MaterialIcons name="dangerous" size={36} color="#fff" />}
                         label="Peligro"
                         subLabel="Robo, Acoso"
-                        type={ALERTA_TYPES.DANGER}
-                        priority={ALERTA_PRIORITIES.CRITICA}
+                        type="PELIGRO"
+                        priority="CRITICA"
                         color="#5E35B1" // Purple
                     />
 
@@ -115,8 +78,8 @@ const EmergencySelectionScreen = () => {
                         icon={<FontAwesome5 name="car-crash" size={30} color="#fff" />}
                         label="Tránsito"
                         subLabel="Choque, Atropello"
-                        type={ALERTA_TYPES.TRAFFIC}
-                        priority={ALERTA_PRIORITIES.ALTA}
+                        type="TRANSITO"
+                        priority="ALTA"
                         color="#0277BD" // Blue
                     />
 
@@ -124,8 +87,8 @@ const EmergencySelectionScreen = () => {
                         icon={<Feather name="shield" size={32} color="#fff" />}
                         label="Preventiva"
                         subLabel="Sospecha, Riesgo"
-                        type={ALERTA_TYPES.PREVENTIVE}
-                        priority={ALERTA_PRIORITIES.MEDIA}
+                        type="PREVENTIVA"
+                        priority="MEDIA"
                         color="#43A047" // Green
                     />
                 </View>

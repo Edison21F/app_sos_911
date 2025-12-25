@@ -12,94 +12,42 @@ import {
   Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import api from '../../../../infrastructure/http/client';
+import { useAuthViewModel } from '../../../hooks/useAuthViewModel';
 import { LoginScreenNavigationProp } from '../../../navigation/Navigator';
 import { LoginStyles } from './LoginStyles';
 import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Application from 'expo-application';
 import { theme } from '../../../styles/theme';
 
 export default function LoginScreen() {
   const navigation = useNavigation<LoginScreenNavigationProp>();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [autoLoggingIn, setAutoLoggingIn] = useState(false);
-
-  // Elimina toda la lógica de conexión y solo permite entrar con cualquier usuario/contraseña
+  const { login, isLoading, getCsrfToken } = useAuthViewModel();
 
   // Obtener un nuevo token CSRF al entrar a la pantalla de Login
-  // Esto asegura que si el backend se reinició (y cambió el secreto), obtengamos una nueva sesión válida
   useEffect(() => {
-    const refreshSession = async () => {
-      try {
-        // Limpiar tokens antiguos
-        await AsyncStorage.removeItem('csrfToken');
-        await AsyncStorage.removeItem('sessionCookie');
-
-        // Solicitar nuevo token
-        const response = await api.get('/csrf-token');
-        const token = response.data.csrfToken;
-
-        if (token) {
-          await AsyncStorage.setItem('csrfToken', token);
-
-          // Capturar y guardar la cookie de sesión
-          const setCookieHeader = response.headers['set-cookie'];
-          if (setCookieHeader) {
-            let cookieValue = Array.isArray(setCookieHeader) ? setCookieHeader.join('; ') : setCookieHeader;
-            if (cookieValue) {
-              cookieValue = cookieValue.split(';')[0];
-            }
-            await AsyncStorage.setItem('sessionCookie', cookieValue);
-          }
-        }
-      } catch (error) {
-        console.error('Error refrescando sesión en Login:', error);
-      }
-    };
-
-    refreshSession();
-  }, []);
+    getCsrfToken();
+  }, [getCsrfToken]);
 
   const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('Error', 'Por favor ingrese email y contraseña');
       return;
     }
-    setIsLoading(true);
 
-    try {
-      const response = await api.post('/clientes/login', {
-        correo_electronico: email,
-        contrasena: password
-      });
+    const success = await login({ email, password });
 
-      console.log('Login exitoso:', response.data);
-
-      // Guardar datos de sesión
-      const userId = response.data.user?.id || response.data.userId;
-      if (userId) {
-        await AsyncStorage.setItem('clienteId', userId.toString());
-        console.log('Cliente ID guardado:', userId);
-      } else {
-        console.error('No se encontró ID de usuario en la respuesta de login', response.data);
-      }
-
+    if (success) {
       Alert.alert('Éxito', 'Inicio de sesión exitoso', [
         {
           text: 'OK',
           onPress: () => navigation.reset({ index: 0, routes: [{ name: 'Home' }] })
         }
       ]);
-    } catch (error: any) {
-      console.error('Error en login:', error);
-      const message = error.response?.data?.message || 'Error al iniciar sesión';
-      Alert.alert('Error', message);
-    } finally {
-      setIsLoading(false);
+    } else {
+      Alert.alert('Error', 'Credenciales incorrectas o error de conexión');
     }
   };
 

@@ -16,14 +16,13 @@ import { RootStackParamList } from '../../../navigation/Navigator';
 import { styles } from './AddContactStyles';
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import api from '../../../api/api';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import { useContactsViewModel } from '../../../hooks/useContactsViewModel';
 
 type AddContactProps = StackScreenProps<RootStackParamList, 'AddContact'>;
 
 const AddContact = ({ navigation, route }: AddContactProps) => {
   const [activeTab, setActiveTab] = useState<'manual' | 'search'>('manual');
+  const { addContact, sendContactRequest, isLoading } = useContactsViewModel();
 
   // State Manual
   const [nombre, setNombre] = useState('');
@@ -32,8 +31,7 @@ const AddContact = ({ navigation, route }: AddContactProps) => {
 
   // State Search
   const [searchQuery, setSearchQuery] = useState('');
-  const [loadingSearch, setLoadingSearch] = useState(false);
-  const [searchResult, setSearchResult] = useState<any>(null); // { id, nombre, telefono }
+  const [searchResult, setSearchResult] = useState<any>(null); // Kept for future "search before add" logic
 
   // --- LOGICA MANUAL ---
   const handleSaveManual = async () => {
@@ -42,73 +40,30 @@ const AddContact = ({ navigation, route }: AddContactProps) => {
       return;
     }
 
-    try {
-      const clienteId = await AsyncStorage.getItem('clienteId');
-
-      if (!clienteId) {
-        Alert.alert('Error', 'No se pudo obtener la información del usuario.');
-        return;
-      }
-
-      await api.post('/contactos_emergencias/crear', {
-        clienteId: clienteId, // NOTA: Backend espera clienteId, no idUsuarioSql en el body del createEmergencyContact
-        nombre,
-        telefono,
-        relacion: descripcion || 'Contacto'
-      });
-
+    const success = await addContact(nombre, telefono, descripcion || 'Contacto', false);
+    if (success) {
       Alert.alert('Éxito', 'Contacto guardado correctamente.', [
-        {
-          text: 'OK',
-          onPress: () => {
-            navigation.goBack();
-          }
-        }
+        { text: 'OK', onPress: () => navigation.goBack() }
       ]);
-
-    } catch (error: any) {
-      console.error('Error al guardar contacto:', error);
-      const msg = error.response?.data?.error || 'No se pudo guardar el contacto.';
-      Alert.alert('Error', msg);
     }
   };
 
   // --- LOGICA BUSQUEDA Y SOLICITUD ---
   const handleSearchUser = async () => {
-    // Nota: En este diseño simplificado, enviamos la solicitud DIRECTAMENTE al backend
-    // El backend buscará y si encuentra, crea la solicitud inmediatamente.
-    // O podemos hacer un paso intermedio de "buscar" para mostrar el nombre antes de enviar.
-    // Vamos a implementar el paso intermedio simulado, O mejor, usamos el endpoint de solicitar directamante 
-    // y si falla es que no existe. Pero el usuario quiere "buscar y agregar".
-
-    // Para UX mejor: Podriamos tener un endpoint de "buscar preview" PERO por privacidad
-    // a veces no se debe mostrar info.
-    // Asumiremos que el usuario quiere enviar la solicitud directamente.
-
     if (!searchQuery.trim()) {
       Alert.alert('Error', 'Ingrese una cédula o teléfono');
       return;
     }
 
-    setLoadingSearch(true);
     try {
-      const clienteId = await AsyncStorage.getItem('clienteId');
-      // Enviamos solicitud de vinculación
-      const response = await api.post('/contactos_emergencias/solicitar', {
-        clienteId,
-        criterio: searchQuery
-      });
-
-      if (response.data) {
-        Alert.alert('Solicitud Enviada', 'Se ha enviado una solicitud de contacto al usuario encontrado.');
-        setSearchResult(null);
-        setSearchQuery('');
-        navigation.goBack();
-      }
+      await sendContactRequest(searchQuery);
+      Alert.alert('Solicitud Enviada', 'Se ha enviado una solicitud de contacto al usuario encontrado.');
+      setSearchResult(null);
+      setSearchQuery('');
+      navigation.goBack();
 
     } catch (error: any) {
       console.error('Error buscando usuario:', error);
-
       const status = error.response?.status;
       const backendMessage = error.response?.data?.message;
 
@@ -120,27 +75,12 @@ const AddContact = ({ navigation, route }: AddContactProps) => {
         const msg = backendMessage || 'Error de conexión o del servidor.';
         Alert.alert('Error', msg);
       }
-    } finally {
-      setLoadingSearch(false);
     }
   };
 
   const handleSendRequest = () => {
-    // Este metodo quedaria obsoleto si hacemos la solicitud directa en handleSearchUser
-    // O si implementamos un endpoint de "preview" en el backend.
-    // Por simplicidad y privacidad, usaremos handleSearchUser como "Enviar Solicitud directa".
-    // Si quieres preview, necesitas un endpoint GET /clientes/buscar que retorne solo nombre parcial.
+    // Alias for handleSearchUser in this simplified flow
     handleSearchUser();
-  };
-
-  const getInitials = (name: string) => {
-    if (!name.trim()) return 'CO';
-    return name
-      .split(' ')
-      .map(word => word.charAt(0))
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
   };
 
   return (
@@ -215,9 +155,11 @@ const AddContact = ({ navigation, route }: AddContactProps) => {
                     onChangeText={setDescripcion}
                   />
 
-                  <TouchableOpacity style={styles.saveButton} onPress={handleSaveManual}>
+                  <TouchableOpacity style={styles.saveButton} onPress={handleSaveManual} disabled={isLoading}>
                     <Feather name="save" size={24} color="white" />
-                    <Text style={[styles.saveButtonText, { marginLeft: 8 }]}>Guardar Contacto</Text>
+                    <Text style={[styles.saveButtonText, { marginLeft: 8 }]}>
+                      {isLoading ? 'Guardando...' : 'Guardar Contacto'}
+                    </Text>
                   </TouchableOpacity>
                 </>
               ) : (
@@ -234,29 +176,13 @@ const AddContact = ({ navigation, route }: AddContactProps) => {
                   <TouchableOpacity
                     style={[styles.saveButton, { backgroundColor: '#333' }]}
                     onPress={handleSearchUser}
-                    disabled={loadingSearch}
+                    disabled={isLoading}
                   >
                     <Feather name="search" size={24} color="white" />
                     <Text style={[styles.saveButtonText, { marginLeft: 8 }]}>
-                      {loadingSearch ? 'Buscando...' : 'Buscar'}
+                      {isLoading ? 'Buscando...' : 'Buscar'}
                     </Text>
                   </TouchableOpacity>
-
-                  {/* RESULTADO DE BÚSQUEDA */}
-                  {searchResult && (
-                    <View style={{ marginTop: 20, padding: 15, backgroundColor: '#f0f9ff', borderRadius: 8, borderWidth: 1, borderColor: '#bae6fd' }}>
-                      <Text style={{ fontWeight: 'bold', fontSize: 16 }}>Usuario Encontrado:</Text>
-                      <Text style={{ fontSize: 14, marginVertical: 5 }}>{searchResult.nombre}</Text>
-
-                      <TouchableOpacity
-                        style={[styles.saveButton, { marginTop: 10, backgroundColor: '#00ACAC' }]}
-                        onPress={handleSendRequest}
-                      >
-                        <Feather name="user-plus" size={20} color="white" />
-                        <Text style={[styles.saveButtonText, { marginLeft: 8 }]}>Enviar Solicitud</Text>
-                      </TouchableOpacity>
-                    </View>
-                  )}
                 </>
               )}
 

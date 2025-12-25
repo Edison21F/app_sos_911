@@ -1,7 +1,7 @@
 // HomeStyles.ts
 import { StyleSheet, Platform, StatusBar } from 'react-native';
-import { normalize, screenWidth } from '../../utils/dimensions';
-import { theme } from '../../theme/theme';
+import { normalize, screenWidth } from '../../../shared/utils/dimensions';
+import { theme } from '../../styles/theme';
 
 export const styles = StyleSheet.create({
   backgroundImage: {

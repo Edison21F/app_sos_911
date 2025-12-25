@@ -5,17 +5,18 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Feather, FontAwesome5 } from '@expo/vector-icons';
 import MapView, { Marker, PROVIDER_GOOGLE, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
-import AlertService, { ALERTA_TYPES } from '../../services/alert.service';
-import OfflineAlertService from '../../services/offlineAlert.service';
-import { theme } from '../../theme/theme'; // Adjust path if needed
+
+import { theme } from '../../styles/theme';
+import { useActiveEmergencyViewModel } from '../../hooks/useActiveEmergencyViewModel';
 import { Modal, ScrollView, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import api from '../../api/api';
+// import container removed
 
 const ActiveEmergencyScreen = () => {
     const route = useRoute<any>();
     const navigation = useNavigation<any>();
-    const { type, isOffline } = route.params || {};
+    const { type, isOffline, alertData } = route.params || {};
+    const { stopEmergency, getMedicalData } = useActiveEmergencyViewModel();
 
     const [pulse] = useState(new Animated.Value(1));
     const mapRef = useRef<MapView>(null);
@@ -32,21 +33,13 @@ const ActiveEmergencyScreen = () => {
     const [loadingMedical, setLoadingMedical] = useState(false);
 
     const fetchMedicalData = async () => {
-        try {
-            setLoadingMedical(true);
-            const id = await AsyncStorage.getItem('clienteId');
-            if (id) {
-                const res = await api.get(`/clientes/detalle/${id}`);
-                if (res.data && res.data.ficha_medica) {
-                    setMedicalData(res.data.ficha_medica);
-                }
-            }
-            setShowMedicalModal(true);
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setLoadingMedical(false);
+        setLoadingMedical(true);
+        const data = await getMedicalData();
+        if (data) {
+            setMedicalData(data);
         }
+        setLoadingMedical(false);
+        setShowMedicalModal(true);
     };
 
     useEffect(() => {
@@ -75,9 +68,7 @@ const ActiveEmergencyScreen = () => {
         ).start();
 
         // Sincronizar si está offline (intento en background si volviera la red, o solo dejarlo estar)
-        if (isOffline) {
-            OfflineAlertService.syncPendingAlerts();
-        }
+        // Offline sync logic should be handled by background service
 
         return () => {
             // Cleanup al salir
@@ -85,26 +76,22 @@ const ActiveEmergencyScreen = () => {
     }, []);
 
     const handleStop = async () => {
-        await AlertService.stopEmergency();
-        navigation.reset({
-            index: 0,
-            routes: [{ name: 'MainTabs' }], // Volver a la navegación principal (Tab Navigator)
-        });
+        await stopEmergency(alertData?._id || alertData?.id);
     };
 
     // Configuración dinámica según tipo
     // Configuración dinámica según tipo
     const getConfig = () => {
         switch (type) {
-            case ALERTA_TYPES.MEDICAL:
+            case 'MEDICA':
                 return { color: ['#E53935', '#B71C1C'] as const, icon: 'heartbeat', title: 'EMERGENCIA MÉDICA', msg: 'Solicitando ayuda médica' };
-            case ALERTA_TYPES.FIRE:
+            case 'INCENDIO':
                 return { color: ['#FF9800', '#E65100'] as const, icon: 'fire', title: 'INCENDIO', msg: 'Alerta de fuego activada' };
-            case ALERTA_TYPES.DANGER:
+            case 'PELIGRO':
                 return { color: ['#673AB7', '#311B92'] as const, icon: 'exclamation-triangle', title: 'PELIGRO', msg: 'Alerta silenciosa enviada' };
-            case ALERTA_TYPES.TRAFFIC:
+            case 'TRANSITO':
                 return { color: ['#0288D1', '#01579B'] as const, icon: 'car-crash', title: 'ACCIDENTE', msg: 'Reportando accidente' };
-            case ALERTA_TYPES.PREVENTIVE:
+            case 'PREVENTIVA':
                 return { color: ['#43A047', '#1B5E20'] as const, icon: 'shield', title: 'PREVENTIVA', msg: 'Modo preventivo activo' };
             default:
                 return { color: ['#D32F2F', '#B71C1C'] as const, icon: 'bell', title: 'EMERGENCIA', msg: 'Ayuda en camino' };

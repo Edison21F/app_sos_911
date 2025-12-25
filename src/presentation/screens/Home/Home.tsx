@@ -4,43 +4,42 @@ import {
   View,
   Text,
   TouchableOpacity,
+  SafeAreaView as RNSafeAreaView,
+  StatusBar,
   Animated,
-  Image,
-  Linking,
+  Easing,
   Alert,
   Modal,
+  Linking,
   Switch
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Line, Circle, G } from 'react-native-svg';
+import Svg, { Circle, G } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Phone, Shield, Lock, AlertTriangle } from 'lucide-react-native';
-import ModernHeader from '../../components/Header/ModernHeader'; // Use ModernHeader
+import ModernHeader from '../../components/Header/ModernHeader';
 import { styles } from './HomeStyles';
 import { normalize } from '../../../shared/utils/dimensions';
 import { HomeScreenProps } from './types';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../../styles/theme';
-import LocationService from '../../../infrastructure/services/location.service';
-import client from '../../../infrastructure/http/client';
+import { useHomeViewModel } from '../../hooks/useHomeViewModel';
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
-  // Sidebar removed
+  const { user, profileImageUrl, initHome, toggleAutoLogin, autoLoginEnabled, logout } = useHomeViewModel();
+
+  // Local UI State
   const [isButtonActive, setIsButtonActive] = useState(false);
   const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false);
-  const [autoLoginEnabled, setAutoLoginEnabled] = useState(true);
   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
   const [isCooldownActive, setIsCooldownActive] = useState(false);
   const [cooldownTime, setCooldownTime] = useState(0);
-  const buttonScale = new Animated.Value(1);
   const [rotation, setRotation] = useState(0);
   const animationFrameRef = useRef<number>(0);
   const pulseAnimValue = useRef(new Animated.Value(1)).current;
   const securityButtonFade = useRef(new Animated.Value(1)).current;
 
-  // Header Data
-  const [userName, setUserName] = useState("Usuario");
-  const [profileImage, setProfileImage] = useState<string | null>(null);
+  // Header Data derived from ViewModel
+  const userName = user ? user.name.split(' ')[0] : "Usuario";
 
   useEffect(() => {
     // Animate rotation
@@ -56,41 +55,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   }, []);
 
   useEffect(() => {
-    const initApp = async () => {
-      try {
-        const setting = await AsyncStorage.getItem('autoLoginEnabled');
-        if (setting !== null) setAutoLoginEnabled(setting === 'true');
+    initHome();
+  }, [initHome]);
 
-        const userId = await AsyncStorage.getItem('idUsuarioSql');
-        if (userId) LocationService.startLocationSync(userId);
-
-        // Fetch User Name
-        const storedName = await AsyncStorage.getItem('nombreUsuario');
-        if (storedName) setUserName(storedName);
-
-        // Fetch Profile for updated Image/Name
-        const storedClienteId = await AsyncStorage.getItem('clienteId');
-        if (storedClienteId) {
-          try {
-            const response = await client.get(`/clientes/detalle/${storedClienteId}`);
-            if (response.data) {
-              if (response.data.nombre) setUserName(response.data.nombre.split(' ')[0]); // First Name
-              if (response.data.foto_perfil) {
-                const API_BASE_URL = client.defaults.baseURL ? client.defaults.baseURL.replace('/api', '') : '';
-                setProfileImage(`${API_BASE_URL}/uploads/profiles/${response.data.foto_perfil}`);
-              }
-            }
-          } catch (e) { console.log('Error fetching profile header preview', e); }
-        }
-
-      } catch (error) {
-        console.error('Error initializing app:', error);
-      }
-    };
-    initApp();
-  }, []);
-
-  // ... (Animations and Security Logic same as before)
   useEffect(() => {
     if (isAlertModalOpen || isCooldownActive) {
       Animated.timing(securityButtonFade, { toValue: 0, duration: 300, useNativeDriver: true }).start();
@@ -115,11 +82,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const handleResolvePress = () => setIsButtonActive(false);
 
   const handleAutoLoginToggle = async () => {
-    // ... same logic
     try {
-      const newValue = !autoLoginEnabled;
-      setAutoLoginEnabled(newValue);
-      await AsyncStorage.setItem('autoLoginEnabled', newValue.toString());
+      const newValue = await toggleAutoLogin();
       if (!newValue) {
         Alert.alert('Auto-login desactivado', 'Deberás iniciar sesión manualmente la próxima vez.', [{ text: 'Entendido' }]);
       } else {
@@ -140,7 +104,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           style: 'destructive',
           onPress: async () => {
             try {
-              await AsyncStorage.multiRemove(['token', 'clienteId', 'idUsuarioSql', 'autoLoginEnabled']);
+              await logout();
               navigation.reset({
                 index: 0,
                 routes: [{ name: 'Login' }],
@@ -155,7 +119,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   };
 
   const renderSecurityModal = () => {
-    // ... same implementation
     return (
       <Modal
         visible={isSecurityModalOpen}
@@ -212,7 +175,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   };
 
   const handleEmergencyCall = async () => {
-    // ... same logic
     Linking.openURL('tel:911').catch(() => Alert.alert('Error', 'No se pudo iniciar la llamada'));
   };
 
@@ -227,40 +189,36 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
-  // Alert Modal - Keep simplified for brevity, using existing logic
+  // Alert Modal
   const renderAlertModal = () => isAlertModalOpen ? (<View />) : null;
 
-  const people = [
-    { id: 1, name: 'Sister', image: require('../../../assets/chica.jpg'), distance: 0.8 },
-    { id: 2, name: 'Dad', image: require('../../../assets/ismael.jpg'), distance: 1.2 },
-    { id: 3, name: 'Albert', image: require('../../../assets/erick.jpg'), distance: 0.5 },
-    { id: 4, name: 'Emy jackson', image: require('../../../assets/carlos.jpg'), distance: 1 },
-  ];
-
   const renderFuturisticElements = () => {
-    // ... same logic
     const centerX = normalize(200);
     const centerY = normalize(200);
     const maxRadius = normalize(190);
     return (
       <Svg style={styles.linesContainer}>
-        <G transform={`rotate(${rotation} ${centerX} ${centerY})`}>
+        <G transform={`rotate(${rotation}, ${centerX}, ${centerY})`}>
           {[0.4, 0.6, 0.8, 1].map((scale, index) => (
-            <Circle key={`circle-${index}`} cx={centerX} cy={centerY} r={maxRadius * scale} stroke="rgba(255, 75, 75, 0.2)" strokeWidth="1.5" fill="none" strokeDasharray={`${normalize(5)},${normalize(15)}`} />
+            <Circle
+              key={`circle-${index}`}
+              cx={centerX}
+              cy={centerY}
+              r={maxRadius * scale}
+              stroke="rgba(255, 75, 75, 0.2)"
+              strokeWidth="1.5"
+              fill="none"
+              strokeDasharray={`${normalize(5)},${normalize(15)}`}
+            />
           ))}
         </G>
-        {isButtonActive && (
-          <>
-            {/* Logic for active connections */}
-          </>
-        )}
         <Circle cx={centerX} cy={centerY} r={normalize(20)} fill="rgba(255, 255, 255, 0.05)" />
       </Svg>
     );
   };
 
   useEffect(() => {
-    let pulseAnimation = null;
+    let pulseAnimation: Animated.CompositeAnimation | null = null;
     if (!isButtonActive && !isAlertModalOpen && !isCooldownActive) {
       pulseAnimation = Animated.loop(
         Animated.sequence([
@@ -302,7 +260,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   };
 
   const renderNearbyPeople = () => {
-    // ... same logic
     return null;
   };
 
@@ -312,11 +269,11 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         {/* NEW MODERN HEADER */}
         <ModernHeader
           userName={userName}
-          notificationCount={2} // Placeholder or fetch real count
+          notificationCount={2}
           onLogout={handleLogout}
-          onNotificationPress={() => navigation.navigate('Alertas' as any)} // Ensure navigation to Tab
+          onNotificationPress={() => navigation.navigate('Notifications')}
           onProfilePress={() => navigation.navigate('Profile')}
-          profileImage={profileImage}
+          profileImage={profileImageUrl} // Use correct variable from viewModel
         />
 
         <Text style={[styles.title, isButtonActive && { marginTop: normalize(18) }]}>
@@ -343,8 +300,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           </TouchableOpacity>
           <View style={{ height: 20 }} />
         </View>
-
-        {/* Removed CustomSidebar */}
 
         <Animated.View style={[styles.securityButton, { opacity: securityButtonFade }]}>
           <TouchableOpacity style={styles.securityButtonContent} onPress={() => setIsSecurityModalOpen(true)} activeOpacity={0.8}>

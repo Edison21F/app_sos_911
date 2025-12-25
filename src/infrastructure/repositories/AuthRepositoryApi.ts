@@ -94,6 +94,7 @@ export class AuthRepositoryApi implements IAuthRepository {
             birthDate: data.fecha_nacimiento,
             status: data.estado,
             helpCount: data.numero_ayudas,
+            profileImage: data.foto_perfil
         };
     }
 }

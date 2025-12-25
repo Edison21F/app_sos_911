@@ -1,37 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { ImageBackground, ScrollView, View, Text, ActivityIndicator, RefreshControl } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, ActivityIndicator, RefreshControl, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../../components/Header/Header';
-import CustomSidebar from '../../components/Sidebar/Sidebar';
 import styles from './AlertHistoryStyles';
 import { ShieldAlert, Siren, Calendar, MapPin } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import api from '../../api/api';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { theme } from '../../theme/theme';
+import { theme } from '../../styles/theme';
+import { useAlertHistoryViewModel } from '../../hooks/useAlertHistoryViewModel';
+import { Alert } from '../../../domain/entities/Alert';
 
-// Definición de tipos
-type AlertType = 'SOS' | '911' | 'MEDICA' | 'VIOLENCIA' | 'INCENDIO'; // Mapear según backend
-type AlertStatus = 'CREADA' | 'NOTIFICADA' | 'ATENDIDA' | 'CERRADA' | 'CANCELADA';
-
-interface Alert {
-  _id: string; // Mongo ID
-  tipo: string;
-  prioridad: string;
-  ubicacion: {
-    direccion?: string;
-    latitud: number;
-    longitud: number;
-  };
-  estado: AlertStatus;
-  fecha_creacion: string;
-  detalles?: string;
-}
-
-const AlertCard = ({ alert, onUpdate }: { alert: Alert, onUpdate: () => void }) => {
-  const isSOS = alert.prioridad === 'ALTA' || alert.tipo === 'SOS';
+const AlertCard = ({ alert, onUpdate }: { alert: Alert, onUpdate: (id: string) => void }) => {
+  const isSOS = alert.type === 'SOS' || alert.title.includes('SOS');
   const borderStyle = isSOS ? styles.borderSOS : styles.border911;
   const icon = isSOS ? (
     <Siren size={38} color="#FF9E5D" />
@@ -47,20 +28,8 @@ const AlertCard = ({ alert, onUpdate }: { alert: Alert, onUpdate: () => void }) 
     }
   };
 
-  const handleFinalize = async () => {
-    try {
-      await api.patch(`/alertas/${alert._id}/estado`, {
-        estado: 'CERRADA',
-        comentario: 'Finalizada por el usuario desde historial'
-      });
-      onUpdate();
-    } catch (error) {
-      console.error("Error finalizando alerta", error);
-    }
-  };
-
-  const formattedDate = alert.fecha_creacion
-    ? format(new Date(alert.fecha_creacion), "dd-MM-yy / h:mm a", { locale: es })
+  const formattedDate = alert.time
+    ? format(new Date(alert.time), "dd-MM-yy / h:mm a", { locale: es })
     : 'Fecha desconocida';
 
   return (
@@ -69,10 +38,10 @@ const AlertCard = ({ alert, onUpdate }: { alert: Alert, onUpdate: () => void }) 
       <View style={styles.cardContent}>
         <View style={styles.headerRow}>
           <View style={styles.alertTitleBlock}>
-            <Text style={styles.alertType}>{alert.tipo}</Text>
-            <Text style={styles.alertSubtitle}>Alerta de Seguridad</Text>
+            <Text style={styles.alertType}>{alert.type}</Text>
+            <Text style={styles.alertSubtitle}>{alert.title}</Text>
           </View>
-          <Text style={[styles.statusBadge, getStatusStyle(alert.estado)]}>{alert.estado}</Text>
+          <Text style={[styles.statusBadge, getStatusStyle(alert.status)]}>{alert.status}</Text>
         </View>
         <View style={styles.divider} />
         <View style={styles.infoRow}>
@@ -87,13 +56,13 @@ const AlertCard = ({ alert, onUpdate }: { alert: Alert, onUpdate: () => void }) 
           <View style={styles.infoBlock}>
             <Text style={styles.infoLabel}>Ubicación</Text>
             <Text style={styles.infoValue} numberOfLines={2}>
-              {alert.ubicacion?.direccion || `Lat: ${alert.ubicacion?.latitud?.toFixed(4)}, Lng: ${alert.ubicacion?.longitud?.toFixed(4)}`}
+              {alert.location?.address || `Lat: ${alert.location?.latitude?.toFixed(4)}, Lng: ${alert.location?.longitude?.toFixed(4)}`}
             </Text>
           </View>
         </View>
 
         {/* Botón Finalizar solo si está activa */}
-        {['CREADA', 'NOTIFICADA', 'ATENDIDA'].includes(alert.estado) && (
+        {['CREADA', 'NOTIFICADA', 'ATENDIDA'].includes(alert.status) && (
           <View style={{ marginTop: 10 }}>
             <Text
               style={{
@@ -104,7 +73,7 @@ const AlertCard = ({ alert, onUpdate }: { alert: Alert, onUpdate: () => void }) 
                 textAlign: 'center',
                 fontWeight: 'bold'
               }}
-              onPress={handleFinalize}
+              onPress={() => onUpdate(alert.id)}
             >
               ESTOY A SALVO
             </Text>
@@ -116,36 +85,11 @@ const AlertCard = ({ alert, onUpdate }: { alert: Alert, onUpdate: () => void }) 
 };
 
 const AlertHistoryComponent = ({ navigation }: { navigation: any }) => {
-  const [isSidebarOpen, setSidebarOpen] = useState(false);
-  const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-
-  const fetchHistory = async () => {
-    try {
-      const clienteId = await AsyncStorage.getItem('clienteId');
-      if (!clienteId) return;
-
-      const response = await api.get(`/alertas/historial/${clienteId}`);
-      if (response.data.success) {
-        setAlerts(response.data.data);
-      }
-    } catch (error) {
-      console.error('Error fetching alert history:', error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
+  const { alerts, loading, refreshing, fetchHistory, refresh, finalizeAlert } = useAlertHistoryViewModel();
 
   useEffect(() => {
     fetchHistory();
   }, []);
-
-  const onRefresh = () => {
-    setRefreshing(true);
-    fetchHistory();
-  };
 
   return (
     <LinearGradient
@@ -161,13 +105,13 @@ const AlertHistoryComponent = ({ navigation }: { navigation: any }) => {
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContainer}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#fff" />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#fff" />}
         >
           {loading ? (
             <ActivityIndicator size="large" color="#FF9E5D" style={{ marginTop: 50 }} />
           ) : alerts.length > 0 ? (
             alerts.map(alert => (
-              <AlertCard key={alert._id} alert={alert} onUpdate={fetchHistory} />
+              <AlertCard key={alert.id} alert={alert} onUpdate={finalizeAlert} />
             ))
           ) : (
             <View style={{ alignItems: 'center', marginTop: 50 }}>

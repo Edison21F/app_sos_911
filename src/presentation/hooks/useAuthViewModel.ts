@@ -1,49 +1,39 @@
-import { useState, useCallback, useEffect } from 'react';
-import { AuthRepositoryApi } from '../../../infrastructure/repositories/AuthRepositoryApi';
-import { LoginUseCase } from '../../../application/use-cases/auth/LoginUseCase';
-import { LogoutUseCase } from '../../../application/use-cases/auth/LogoutUseCase';
-import { GetCurrentUserUseCase } from '../../../application/use-cases/auth/GetCurrentUserUseCase';
-import { LoginCredentials } from '../../../application/ports/repositories/IAuthRepository';
-import { User } from '../../../domain/entities/User';
-
-// Simple Composition Root (could be moved to a DI container later)
-const authRepository = new AuthRepositoryApi();
-const loginUseCase = new LoginUseCase(authRepository);
-const logoutUseCase = new LogoutUseCase(authRepository);
-const getCurrentUserUseCase = new GetCurrentUserUseCase(authRepository);
+import { useState, useEffect } from 'react';
+import { container } from '../../infrastructure/di/container';
+import { User } from '../../domain/entities/User';
 
 export const useAuthViewModel = () => {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const checkAuth = useCallback(async () => {
+    const checkAuth = async () => {
         setIsLoading(true);
         try {
-            const currentUser = await getCurrentUserUseCase.execute();
+            const currentUser = await container.getCurrentUserUseCase.execute();
             setUser(currentUser);
-        } catch (e) {
+        } catch (err) {
             setUser(null);
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    };
 
     // Initial check
     useEffect(() => {
         checkAuth();
-    }, [checkAuth]);
+    }, []);
 
-    const login = async (credentials: LoginCredentials) => {
+    const login = async (credentials: any) => {
         setIsLoading(true);
         setError(null);
         try {
-            const loggedUser = await loginUseCase.execute(credentials);
+            const loggedUser = await container.loginUseCase.execute(credentials);
             setUser(loggedUser);
-            return loggedUser;
-        } catch (e: any) {
-            setError(e.message || 'Login failed');
-            throw e;
+            return true;
+        } catch (err: any) {
+            setError(err.message || 'Login failed');
+            return false;
         } finally {
             setIsLoading(false);
         }
@@ -52,13 +42,17 @@ export const useAuthViewModel = () => {
     const logout = async () => {
         setIsLoading(true);
         try {
-            await logoutUseCase.execute();
+            await container.logoutUseCase.execute();
             setUser(null);
-        } catch (e: any) {
-            setError(e.message || 'Logout failed');
+        } catch (err) {
+            console.error(err);
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const getCsrfToken = async () => {
+        return container.getCsrfTokenUseCase.execute();
     };
 
     return {
@@ -68,6 +62,7 @@ export const useAuthViewModel = () => {
         isAuthenticated: !!user,
         login,
         logout,
-        checkAuth
+        checkAuth,
+        getCsrfToken
     };
 };

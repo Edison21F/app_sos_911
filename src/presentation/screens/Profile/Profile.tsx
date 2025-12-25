@@ -18,43 +18,47 @@ import { useNavigation } from '@react-navigation/native';
 import { AntDesign, Feather, Ionicons, MaterialCommunityIcons, FontAwesome5 } from "@expo/vector-icons";
 import Header from "../../components/Header/Header";
 import { LinearGradient } from 'expo-linear-gradient';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
-import api from '../../api/api';
-import { theme } from '../../theme/theme';
+import { theme } from '../../styles/theme';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { format } from 'date-fns';
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { useProfileViewModel } from '../../hooks/useProfileViewModel';
 
 const { width } = Dimensions.get('window');
 
-const API_BASE_URL = api.defaults.baseURL ? api.defaults.baseURL.replace('/api', '') : '';
-
 const ProfileScreen = () => {
   const navigation = useNavigation<any>();
-  // --- STATE ---
+  const {
+    client,
+    phones,
+    isLoading,
+    isSaving,
+    loadProfile,
+    updateProfile,
+    uploadImage,
+    addPhone,
+    updatePhone,
+    deletePhone,
+    logout
+  } = useProfileViewModel();
+
+  // --- LOCAL STATE FOR EDITING ---
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [address, setAddress] = useState("");
   const [idNumber, setIdNumber] = useState("");
   const [birthDate, setBirthDate] = useState("");
-  const [profileImage, setProfileImage] = useState<string | null>(null);
-
-  const [clienteId, setClienteId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
   // Edit Mode
   const [isEditing, setIsEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
 
   // Phone Logic
-  const [phoneList, setPhoneList] = useState([] as { id: number; detalle: string; numero: string }[]);
   const [showPhoneModal, setShowPhoneModal] = useState(false);
   const [newPhone, setNewPhone] = useState("");
   const [newPhoneDetail, setNewPhoneDetail] = useState("");
-  const [phoneError, setPhoneError] = useState("");
   const [editPhoneIndex, setEditPhoneIndex] = useState<number | null>(null);
-  const [isSavingPhone, setIsSavingPhone] = useState(false);
+  const [isSavingPhone, setIsSavingPhone] = useState(false); // Local loading for phone modal
 
   // Password
   const [password, setPassword] = useState("");
@@ -69,77 +73,48 @@ const ProfileScreen = () => {
   const [conditions, setConditions] = useState("");
   const [medications, setMedications] = useState("");
 
-  // --- EFFECT ---
+  // Sync state when client data loads
   useEffect(() => {
-    loadClientProfile();
-  }, []);
+    loadProfile();
+  }, [loadProfile]);
 
-  const loadClientProfile = async () => {
-    try {
-      const storedClienteId = await AsyncStorage.getItem('clienteId');
-      if (!storedClienteId) return;
-      setClienteId(storedClienteId);
-
-      const response = await api.get(`/clientes/detalle/${storedClienteId}`);
-      const data = response.data;
-      if (data) {
-        setFullName(data.nombre || '');
-        setEmail(data.correo_electronico || '');
-        setIdNumber(data.cedula_identidad || '');
-        setAddress(data.direccion || '');
-        setBirthDate(data.fecha_nacimiento ? data.fecha_nacimiento.split('T')[0] : '');
-        if (data.foto_perfil) {
-          const url = `${API_BASE_URL}/uploads/profiles/${data.foto_perfil}`;
-          setProfileImage(url);
-        }
-        if (data.ficha_medica) {
-          setBloodType(data.ficha_medica.tipo_sangre || '');
-          setAllergies(data.ficha_medica.alergias || '');
-          setConditions(data.ficha_medica.padecimiento || '');
-          setMedications(data.ficha_medica.medicamentos || '');
-        }
+  useEffect(() => {
+    if (client) {
+      setFullName(client.name || "");
+      setEmail(client.email || "");
+      setIdNumber(client.identityCard || "");
+      setAddress(client.address || "");
+      setBirthDate(client.birthDate ? client.birthDate.split('T')[0] : "");
+      if (client.medicalRecord) {
+        setBloodType(client.medicalRecord.bloodType || "");
+        setAllergies(client.medicalRecord.allergies || "");
+        setConditions(client.medicalRecord.conditions || "");
+        setMedications(client.medicalRecord.medications || "");
       }
-      loadPhoneNumbers(storedClienteId);
-    } catch (e) { console.error(e); }
-    finally { setIsLoading(false); }
-  };
-
-  const loadPhoneNumbers = async (id: string) => {
-    try {
-      const res = await api.get(`/clientes_numeros/listar/por-cliente/${id}`);
-      setPhoneList(res.data.map((p: any) => ({ id: p.id, detalle: p.nombre, numero: p.numero })));
-    } catch (e) { }
-  };
+    }
+  }, [client]);
 
   // --- HANDLERS ---
   const handleEditPress = () => setIsEditing(true);
 
   const handleSavePress = async () => {
-    try {
-      setIsSaving(true);
-      const payload: any = {
-        nombre: fullName,
-        correo_electronico: email,
-        cedula_identidad: idNumber,
-        direccion: address,
-        fecha_nacimiento: birthDate,
-        ficha_medica: {
-          tipo_sangre: bloodType,
-          alergias: allergies,
-          padecimiento: conditions,
-          medicamentos: medications
-        }
-      };
-      if (password) payload.contrasena = password;
-
-      await api.put(`/clientes/actualizar/${clienteId}`, payload);
-      Alert.alert("Éxito", "Perfil actualizado correctamente");
+    const success = await updateProfile({
+      name: fullName,
+      email: email,
+      idNumber: idNumber,
+      address: address,
+      birthDate: birthDate,
+      password: password || undefined,
+      medicalRecord: {
+        bloodType,
+        allergies,
+        conditions,
+        medications
+      }
+    });
+    if (success) {
       setIsEditing(false);
       setPassword("");
-    } catch (error) {
-      Alert.alert("Error", "No se pudo actualizar el perfil");
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -150,28 +125,8 @@ const ProfileScreen = () => {
       aspect: [1, 1],
       quality: 0.7,
     });
-    if (!result.canceled) uploadImage(result.assets[0].uri);
-  };
-
-  const uploadImage = async (uri: string) => {
-    // ... same logic as before ...
-    try {
-      const formData = new FormData();
-      // @ts-ignore
-      formData.append('foto_perfil', {
-        uri: Platform.OS === 'android' ? uri : uri.replace('file://', ''),
-        name: `profile_${clienteId}.jpg`,
-        type: 'image/jpeg',
-      });
-      const response = await fetch(`${API_BASE_URL}/clientes/upload-profile/${clienteId}`, {
-        method: 'POST', body: formData, headers: { 'Accept': 'application/json' }
-      });
-      const data = await response.json();
-      if (response.ok && data.foto_perfil) {
-        setProfileImage(`${API_BASE_URL}/uploads/profiles/${data.foto_perfil}`);
-      }
-    } catch (e) {
-      Alert.alert("Error", "Falló subida de imagen");
+    if (!result.canceled) {
+      await uploadImage(result.assets[0].uri);
     }
   };
 
@@ -179,30 +134,25 @@ const ProfileScreen = () => {
   const openPhoneModal = (idx: number | null = null) => {
     setEditPhoneIndex(idx);
     if (idx !== null) {
-      setNewPhone(phoneList[idx].numero);
-      setNewPhoneDetail(phoneList[idx].detalle);
+      setNewPhone(phones[idx].number);
+      setNewPhoneDetail(phones[idx].detail);
     } else {
       setNewPhone(""); setNewPhoneDetail("");
     }
     setShowPhoneModal(true);
   };
 
-  const savePhone = async () => {
+  const savePhoneHandler = async () => {
     if (!newPhone || !newPhoneDetail) return;
-    try {
-      setIsSavingPhone(true);
-      if (editPhoneIndex !== null) {
-        const p = phoneList[editPhoneIndex];
-        await api.put(`/clientes_numeros/actualizar/${p.id}`, { nombre: newPhoneDetail, numero: newPhone, estado: 'activo' });
-        const list = [...phoneList]; list[editPhoneIndex] = { ...p, numero: newPhone, detalle: newPhoneDetail };
-        setPhoneList(list);
-      } else {
-        const res = await api.post('/clientes_numeros/crear', { clienteId, nombre: newPhoneDetail, numero: newPhone });
-        setPhoneList([...phoneList, { id: res.data.clienteNumero.id, detalle: newPhoneDetail, numero: newPhone }]);
-      }
-      setShowPhoneModal(false);
-    } catch (e) { Alert.alert("Error", "Falló guardar teléfono"); }
-    finally { setIsSavingPhone(false); }
+    setIsSavingPhone(true);
+    let success = false;
+    if (editPhoneIndex !== null) {
+      success = (await updatePhone(phones[editPhoneIndex].id, newPhoneDetail, newPhone)) || false;
+    } else {
+      success = (await addPhone(newPhoneDetail, newPhone)) || false;
+    }
+    setIsSavingPhone(false);
+    if (success) setShowPhoneModal(false);
   };
 
   const deletePhoneHandler = (idx: number) => {
@@ -210,19 +160,39 @@ const ProfileScreen = () => {
       { text: "Cancelar" },
       {
         text: "Eliminar", style: 'destructive', onPress: async () => {
-          try {
-            await api.delete(`/clientes_numeros/eliminar/${phoneList[idx].id}`);
-            setPhoneList(phoneList.filter((_, i) => i !== idx));
-          } catch (e) { Alert.alert("Error"); }
+          await deletePhone(phones[idx].id);
         }
       }
     ]);
   };
 
-  if (!clienteId || isLoading) {
+  const handleLogout = async () => {
+    await logout();
+    const { CommonActions } = require('@react-navigation/native');
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      })
+    );
+  };
+
+  if (isLoading) { // Changed to only check isLoading, initially client might be null
     return (
       <View style={{ flex: 1, backgroundColor: theme.colors.background, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color={theme.colors.primary} />
+      </View>
+    );
+  }
+
+  // Safe check for client before render if not loading
+  if (!client && !isLoading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: theme.colors.background, justifyContent: 'center', alignItems: 'center' }}>
+        <Text style={{ color: '#fff' }}>Error cargando perfil</Text>
+        <TouchableOpacity onPress={loadProfile} style={{ marginTop: 20, padding: 10, backgroundColor: theme.colors.primary, borderRadius: 8 }}>
+          <Text style={{ color: '#fff' }}>Reintentar</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -231,7 +201,6 @@ const ProfileScreen = () => {
 
   return (
     <LinearGradient colors={theme.colors.gradientBackground} style={styles.container}>
-      {/* Header Back Button Only */}
       <Header showBackButton onBackPress={() => navigation.goBack()} />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -239,8 +208,8 @@ const ProfileScreen = () => {
         {/* 1. Profile Display */}
         <Animated.View entering={FadeInDown.delay(100).duration(500)} style={styles.avatarSection}>
           <View style={styles.imageWrapper}>
-            {profileImage ? (
-              <Image source={{ uri: profileImage }} style={styles.avatarImage} />
+            {client!.profileImage ? ( // client is not null here
+              <Image source={{ uri: client!.profileImage }} style={styles.avatarImage} />
             ) : (
               <View style={styles.avatarPlaceholder}><Text style={styles.avatarText}>{getInitials(fullName)}</Text></View>
             )}
@@ -373,12 +342,12 @@ const ProfileScreen = () => {
                 <Feather name="plus-circle" size={18} color={theme.colors.primary} />
               </TouchableOpacity>
             </View>
-            {phoneList.map((p, idx) => (
+            {phones.map((p, idx) => (
               <TouchableOpacity key={idx} style={styles.phoneRow} onLongPress={() => deletePhoneHandler(idx)} onPress={() => openPhoneModal(idx)}>
                 <View style={styles.phoneIconBg}><Feather name="smartphone" size={14} color="#FFF" /></View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.phoneLabel}>{p.detalle}</Text>
-                  <Text style={styles.phoneValue}>{p.numero}</Text>
+                  <Text style={styles.phoneLabel}>{p.detail}</Text>
+                  <Text style={styles.phoneValue}>{p.number}</Text>
                 </View>
                 <Feather name="chevron-right" size={16} color="#666" />
               </TouchableOpacity>
@@ -450,16 +419,7 @@ const ProfileScreen = () => {
               <View style={styles.divider} />
 
               {/* Logout */}
-              <TouchableOpacity style={styles.optionRow} onPress={async () => {
-                const { CommonActions } = require('@react-navigation/native');
-                await AsyncStorage.multiRemove(['clienteId', 'nombreUsuario', 'userToken']);
-                navigation.dispatch(
-                  CommonActions.reset({
-                    index: 0,
-                    routes: [{ name: 'Login' }],
-                  })
-                );
-              }}>
+              <TouchableOpacity style={styles.optionRow} onPress={handleLogout}>
                 <View style={[styles.phoneIconBg, { backgroundColor: 'rgba(231, 76, 60, 0.1)' }]}>
                   <Feather name="log-out" size={16} color="#E74C3C" />
                 </View>
@@ -502,7 +462,7 @@ const ProfileScreen = () => {
               <TouchableOpacity style={styles.modalBtnCancel} onPress={() => setShowPhoneModal(false)}>
                 <Text style={styles.modalBtnTextCancel}>Cancelar</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.modalBtnSave} onPress={savePhone} disabled={isSavingPhone}>
+              <TouchableOpacity style={styles.modalBtnSave} onPress={savePhoneHandler} disabled={isSavingPhone}>
                 {isSavingPhone ? <ActivityIndicator color="#FFF" /> : <Text style={styles.modalBtnTextSave}>Guardar</Text>}
               </TouchableOpacity>
             </View>

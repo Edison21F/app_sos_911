@@ -1,10 +1,12 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { API_URL, DEFAULT_TIMEOUT } from '../../config/constants';
+
 // Configuración de la instancia de Axios para el backend
 const client = axios.create({
-    baseURL: 'http://192.168.40.81:4000', // TODO: Move to Env Config
-    timeout: 10000,
+    baseURL: API_URL,
+    timeout: DEFAULT_TIMEOUT,
     headers: {
         'Content-Type': 'application/json',
     },

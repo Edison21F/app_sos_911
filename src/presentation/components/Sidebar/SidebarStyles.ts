@@ -1,6 +1,6 @@
 import { StyleSheet, Platform, StatusBar, Dimensions } from 'react-native';
-import { normalize, screenWidth } from '../../utils/dimensions';
-import { theme } from '../../theme/theme';
+import { normalize, screenWidth } from '../../../shared/utils/dimensions';
+import { theme } from '../../styles/theme';
 
 // Constants
 const SIDEBAR_WIDTH = Math.min(screenWidth * 0.8, 300);

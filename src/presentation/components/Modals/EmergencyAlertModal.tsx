@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Modal, View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../../theme/theme';
-import api from '../../api/api';
+import { theme } from '../../styles/theme';
+import client from '../../../infrastructure/http/client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface EmergencyAlertModalProps {
@@ -26,7 +26,7 @@ const EmergencyAlertModal: React.FC<EmergencyAlertModalProps> = ({ visible, onCl
             const myId = await AsyncStorage.getItem('clienteId');
             const myName = await AsyncStorage.getItem('nombreUsuario');
 
-            await api.post(`/alertas/responder/${_id}`, {
+            await client.post(`/alertas/responder/${_id}`, {
                 idUsuarioSql: myId,
                 nombre: myName || 'Usuario',
                 respuesta: responseType,

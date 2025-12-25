@@ -1,7 +1,9 @@
 import * as Location from 'expo-location';
 import api from '../http/client';
+import { ILocationService, LocationData } from '../../application/ports/services/ILocationService';
 
-class LocationService {
+export class LocationService implements ILocationService {
+    private subscriber: Location.LocationSubscription | null = null;
 
     async requestPermissions() {
         const { status } = await Location.requestForegroundPermissionsAsync();
@@ -10,55 +12,46 @@ class LocationService {
         }
     }
 
-    async getCurrentLocation() {
+    async getCurrentLocation(): Promise<LocationData> {
         try {
-            // Verificar permisos primero
             await this.requestPermissions();
-
             const location = await Location.getCurrentPositionAsync({
                 accuracy: Location.Accuracy.High,
             });
-            return location.coords;
+            return {
+                latitude: location.coords.latitude,
+                longitude: location.coords.longitude,
+                heading: location.coords.heading,
+                speed: location.coords.speed
+            };
         } catch (error) {
             console.error('Error obteniendo ubicación:', error);
             throw error;
         }
     }
 
-    // Seguir ubicación en tiempo real
-    async watchLocation(callback: (location: Location.LocationObjectCoords) => void) {
-        await this.requestPermissions();
-
-        const subscriber = await Location.watchPositionAsync(
-            {
-                accuracy: Location.Accuracy.BestForNavigation,
-                timeInterval: 2000, // Actualizar cada 2 segundos
-                distanceInterval: 5, // O cada 5 metros
-            },
-            (newLocation) => {
-                callback(newLocation.coords);
-            }
-        );
-
-        return subscriber; // Retornar para poder hacer .remove()
+    async stopLocationSync(): Promise<void> {
+        if (this.subscriber) {
+            this.subscriber.remove();
+            this.subscriber = null;
+        }
     }
 
-
-    // Iniciar sincronización de ubicación con el backend
-    async startLocationSync(userId: string) {
+    async startLocationSync(userId: string): Promise<void> {
         await this.requestPermissions();
 
-        // Configurar seguimiento
-        const subscriber = await Location.watchPositionAsync(
+        if (this.subscriber) {
+            return;
+        }
+
+        this.subscriber = await Location.watchPositionAsync(
             {
                 accuracy: Location.Accuracy.High,
-                timeInterval: 60000, // Cada 60 segundos para no saturar SQL
-                distanceInterval: 100, // Cada 100 metros
+                timeInterval: 60000,
+                distanceInterval: 100,
             },
             async (newLocation) => {
                 try {
-                    // Enviar al backend
-                    // Esto crea un registro en SQL (historial) y actualiza MongoDB (posición actual)
                     await api.post('/ubicaciones_clientes/crear', {
                         clienteId: userId,
                         latitud: newLocation.coords.latitude,
@@ -71,9 +64,6 @@ class LocationService {
                 }
             }
         );
-
-        return subscriber;
     }
 }
 
-export default new LocationService();

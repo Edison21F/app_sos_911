@@ -1,82 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Dimensions } from 'react-native';
+import React from 'react';
+import { View, Text, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { theme } from '../../theme/theme';
+import { theme } from '../../styles/theme';
 import { styles } from './DashboardStyles';
-import Header from '../../components/Header/ModernHeader'; // Reusing the specific ModernHeader if possible, or needing to import it properly
 import ModernHeader from '../../components/Header/ModernHeader';
-import * as Battery from 'expo-battery';
-// Removed unused expo-network import
-import NetInfo from '@react-native-community/netinfo';
-import * as Location from 'expo-location';
 import { AlertTriangle, Users, CheckCircle, Clock, Zap, Wifi, MapPin } from 'lucide-react-native';
-import { normalize } from '../../utils/dimensions';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
-import api from '../../api/api';
+import { useDashboardViewModel } from '../../hooks/useDashboardViewModel';
+// import client removed
 
 const DashboardScreen = () => {
     const navigation = useNavigation<any>();
-    const [batteryLevel, setBatteryLevel] = useState<number | null>(null);
-    const [isConnected, setIsConnected] = useState<boolean | null>(null);
-    const [isGpsEnabled, setIsGpsEnabled] = useState<boolean | null>(null);
-    const [userName, setUserName] = useState("Usuario");
-    const [profileImage, setProfileImage] = useState<string | null>(null);
-
-    useEffect(() => {
-        // Battery
-        const sub = Battery.addBatteryLevelListener(({ batteryLevel }: { batteryLevel: number }) => {
-            setBatteryLevel(Math.round(batteryLevel * 100));
-        });
-        Battery.getBatteryLevelAsync().then((level: number) => {
-            setBatteryLevel(Math.round(level * 100));
-        });
-
-        // Network
-        const unsubscribeNet = NetInfo.addEventListener(state => {
-            setIsConnected(state.isConnected);
-        });
-
-        // GPS Check
-        const checkLocation = async () => {
-            const providerStatus = await Location.getProviderStatusAsync();
-            setIsGpsEnabled(providerStatus.locationServicesEnabled);
-        };
-        checkLocation();
-
-        // User Data
-        const loadUser = async () => {
-            const storedName = await AsyncStorage.getItem('nombreUsuario');
-            if (storedName) setUserName(storedName.split(' ')[0]);
-
-            const storedClienteId = await AsyncStorage.getItem('clienteId');
-            if (storedClienteId) {
-                try {
-                    const response = await api.get(`/clientes/detalle/${storedClienteId}`);
-                    if (response.data?.foto_perfil) {
-                        const API_BASE_URL = api.defaults.baseURL ? api.defaults.baseURL.replace('/api', '') : '';
-                        setProfileImage(`${API_BASE_URL}/uploads/profiles/${response.data.foto_perfil}`);
-                    }
-                } catch (e) { }
-            }
-        };
-        loadUser();
-
-        return () => {
-            sub.remove();
-            unsubscribeNet();
-        }
-    }, []);
+    const { user, batteryLevel, isConnected, isGpsEnabled, getProfileImageUrl } = useDashboardViewModel();
 
     // Helper to calculate color based on value
     const getBatteryColor = (level: number) => {
         if (level > 20) return '#2ecc71';
         return '#e74c3c';
-    };
-
-    const handleLogout = () => {
-        // Placeholder, implement actual logout if needed or reuse logic
     };
 
     return (
@@ -87,15 +28,13 @@ const DashboardScreen = () => {
             end={{ x: 1, y: 1 }}
         >
             <SafeAreaView style={{ flex: 1 }}>
-                {/* Reusing ModernHeader or Standard Header? User asked for stats screen. 
-                     Assuming this screen replaces the old Home so it needs the Header too. */}
                 <ModernHeader
-                    userName={userName}
+                    userName={user ? user.name.split(' ')[0] : 'Usuario'}
                     notificationCount={2}
-                    onLogout={() => { /* duplicate logout logic or move to context */ }}
+                    onLogout={() => { /* TODO: Move to VM or separate auth hook? For now keep empty as per original placeholder */ }}
                     onNotificationPress={() => navigation.navigate('Alertas' as any)}
                     onProfilePress={() => navigation.navigate('Profile' as any)}
-                    profileImage={profileImage}
+                    profileImage={getProfileImageUrl()}
                 />
 
                 <ScrollView contentContainerStyle={styles.content}>

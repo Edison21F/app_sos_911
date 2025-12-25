@@ -1,6 +1,6 @@
 import { StyleSheet } from "react-native";
-import { normalize } from "../../utils/dimensions";
-import { theme } from "../../theme/theme";
+import { normalize } from '../../../shared/utils/dimensions';
+import { theme } from '../../styles/theme';
 
 export const styles = StyleSheet.create({
 

@@ -1,28 +1,30 @@
 import io, { Socket } from 'socket.io-client';
-import client from '../http/client';
+import { ILiveTrackingService } from '../../application/ports/services/ILiveTrackingService';
+import { API_URL } from '../../config/constants';
 
-// URL base para el socket
-// TODO: Externalize to Config
-const SOCKET_URL = client.defaults.baseURL || 'http://192.168.100.225:3000';
-
-class SocketService {
+export class SocketService implements ILiveTrackingService {
     private socket: Socket | null = null;
+    private userId: string | null = null;
 
     connect(userId?: string) {
         if (this.socket?.connected) {
             return;
         }
 
-        this.socket = io(SOCKET_URL, {
+        this.userId = userId || null;
+
+        this.socket = io(API_URL, {
             transports: ['websocket'],
-            reconnection: true,
+            autoConnect: false,
             reconnectionAttempts: 5,
         });
 
+        this.socket.connect();
+
         this.socket.on('connect', () => {
             console.log('Socket conectado:', this.socket?.id);
-            if (userId) {
-                this.joinRoom(`user_${userId}`);
+            if (this.userId) {
+                this.joinRoom(`user_${this.userId}`);
             }
         });
 
@@ -54,9 +56,31 @@ class SocketService {
         this.socket.on('locationUpdated', callback);
     }
 
+    unsubscribeFromAlert(alertId: string) {
+        if (this.socket) {
+            this.socket.emit('leave', `alert_${alertId}`);
+            this.socket.off('alert:status');
+            this.socket.off('locationUpdated');
+        }
+    }
+
     onNewAlert(callback: (alerta: any) => void) {
         if (this.socket) {
             this.socket.on('alert:new', callback);
+        }
+    }
+
+    subscribeToGroupChat(groupId: string, callback: (msg: any) => void) {
+        if (!this.socket) return;
+        this.joinRoom(`group_${groupId}`);
+        this.socket.on('group_message', callback);
+    }
+
+    leaveGroupChat(groupId: string) {
+        if (this.socket) {
+            // Socket.io leave room logic if we want to explicitly leave, though just removing listener might be enough
+            this.socket.off('group_message');
+            // optionally emit leave room event if backend supports it
         }
     }
 
@@ -68,4 +92,4 @@ class SocketService {
     }
 }
 
-export default new SocketService();
+

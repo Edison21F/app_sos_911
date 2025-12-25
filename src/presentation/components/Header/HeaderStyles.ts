@@ -1,6 +1,6 @@
 // HeaderStyles.ts
 import { StyleSheet } from 'react-native';
-import { normalize } from '../../utils/dimensions';
+import { normalize } from '../../../shared/utils/dimensions';
 
 export const headerStyles = StyleSheet.create({
   header: {

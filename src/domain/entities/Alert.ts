@@ -21,4 +21,5 @@ export interface Alert {
     groupId?: string;
     groupName?: string;
     responseComment?: string;
+    isOffline?: boolean;
 }

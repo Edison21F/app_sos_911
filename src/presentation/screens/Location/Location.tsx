@@ -14,7 +14,7 @@ import { NavigationProp, useNavigation } from '@react-navigation/native';
 import SeeLocations from './SeeLocations/SeeLocations';
 import GlobalHeaderWrapper from '../../components/Header/GlobalHeaderWrapper';
 import { LinearGradient } from 'expo-linear-gradient';
-import { theme } from '../../theme/theme';
+import { theme } from '../../styles/theme';
 
 type RootStackParamList = {
   LocationScreen: undefined;

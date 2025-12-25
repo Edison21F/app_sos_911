@@ -1,6 +1,6 @@
 import { StyleSheet, Platform, StatusBar } from 'react-native';
-import { normalize } from '../../utils/dimensions';
-import { theme } from '../../theme/theme';
+import { normalize } from '../../../shared/utils/dimensions';
+import { theme } from '../../styles/theme';
 
 const styles = StyleSheet.create({
   container: {

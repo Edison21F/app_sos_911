@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -15,11 +15,9 @@ import Header from '../../../components/Header/Header';
 import styles from './GroupChatStyles';
 import { GroupChatScreenProps } from '../../../navigation/Navigator';
 import { LinearGradient } from 'expo-linear-gradient';
-import io, { Socket } from 'socket.io-client';
-import api from '../../../api/api';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { theme } from '../../../theme/theme';
+import { theme } from '../../../styles/theme';
+import { useGroupChatViewModel } from '../../../hooks/useGroupChatViewModel';
 
 interface Message {
   id: string;
@@ -32,89 +30,16 @@ interface Message {
 
 const GroupChat: React.FC<GroupChatScreenProps> = ({ route, navigation }) => {
   const { group } = route.params;
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [newMessage, setNewMessage] = useState('');
   const [isSidebarOpen, setSidebarOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [currentClientId, setCurrentClientId] = useState<string | null>(null);
 
-  const socketRef = useRef<Socket | null>(null);
-  const flatListRef = useRef<FlatList>(null);
-
-  useEffect(() => {
-    const initChat = async () => {
-      try {
-        const id = await AsyncStorage.getItem('clienteId');
-        if (!id) return;
-        setCurrentClientId(id);
-
-        const response = await api.get(`/mensajes_grupo/listar/por-grupo/${group.id}`);
-        const history = response.data.map((msg: any) => ({
-          id: msg.id,
-          text: msg.mensaje,
-          sender: msg.cliente_info?.nombre || 'Desconocido',
-          senderId: msg.clienteId.toString(),
-          timestamp: new Date(msg.fecha_envio),
-          isMine: msg.clienteId.toString() === id
-        }));
-        setMessages(history);
-
-        // @ts-ignore
-        const baseURL = api.defaults.baseURL || 'http://192.168.100.225:4000';
-        socketRef.current = io(baseURL);
-
-        socketRef.current.on('connect', () => {
-          socketRef.current?.emit('join', `group_${group.id}`);
-        });
-
-        socketRef.current.on('group_message', (msg: any) => {
-          setMessages(prev => {
-            if (prev.find(m => m.id === msg.id)) return prev;
-            const newMessage: Message = {
-              id: msg.id,
-              text: msg.mensaje,
-              sender: msg.cliente_info?.nombre || 'Usuario',
-              senderId: msg.clienteId.toString(),
-              timestamp: new Date(msg.fecha_envio),
-              isMine: msg.clienteId.toString() === id
-            };
-            return [...prev, newMessage];
-          });
-          setTimeout(() => {
-            flatListRef.current?.scrollToEnd({ animated: true });
-          }, 100);
-        });
-
-      } catch (error) {
-        console.error('Chat init error:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    initChat();
-
-    return () => {
-      socketRef.current?.disconnect();
-    };
-  }, [group.id]);
-
-  const sendMessage = async () => {
-    if (!newMessage.trim() || !currentClientId) return;
-    const textToSend = newMessage.trim();
-    setNewMessage('');
-
-    try {
-      await api.post('/mensajes_grupo/crear', {
-        grupoId: group.id,
-        clienteId: currentClientId,
-        mensaje: textToSend,
-        tipo_mensaje: 'texto'
-      });
-    } catch (error) {
-      console.error('Send message error:', error);
-    }
-  };
+  const {
+    messages,
+    newMessage,
+    setNewMessage,
+    loading,
+    sendMessage,
+    flatListRef
+  } = useGroupChatViewModel(group);
 
   const renderMessage = ({ item }: { item: Message }) => (
     <Animated.View

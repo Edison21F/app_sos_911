@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import api from '../../api/api';
+import client from '../../../infrastructure/http/client';
 import ModernHeader from './ModernHeader';
 
 const GlobalHeaderWrapper = (props: any) => {
@@ -20,11 +20,11 @@ const GlobalHeaderWrapper = (props: any) => {
             // Fetch Profile for updated Image/Name
             const storedClienteId = await AsyncStorage.getItem('clienteId');
             if (storedClienteId) {
-                const response = await api.get(`/clientes/detalle/${storedClienteId}`);
+                const response = await client.get(`/clientes/detalle/${storedClienteId}`);
                 if (response.data) {
                     if (response.data.nombre) setUserName(response.data.nombre.split(' ')[0]);
                     if (response.data.foto_perfil) {
-                        const API_BASE_URL = api.defaults.baseURL ? api.defaults.baseURL.replace('/api', '') : '';
+                        const API_BASE_URL = client.defaults.baseURL ? client.defaults.baseURL.replace('/api', '') : '';
                         setProfileImage(`${API_BASE_URL}/uploads/profiles/${response.data.foto_perfil}`);
                     }
                 }

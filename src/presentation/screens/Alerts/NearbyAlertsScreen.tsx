@@ -1,11 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, Linking, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { theme } from '../../theme/theme';
+import { theme } from '../../styles/theme';
 import { MapPin, AlertTriangle, Navigation } from 'lucide-react-native';
-import { normalize } from '../../utils/dimensions';
-import api from '../../api/api';
-import LocationService from '../../services/location.service';
+import { normalize } from '../../../shared/utils/dimensions';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/Navigator';
 import GlobalHeaderWrapper from '../../components/Header/GlobalHeaderWrapper';
@@ -28,44 +26,19 @@ type AlertaCercana = {
     distancia?: number;
 };
 
+import { useNearbyAlertsViewModel } from '../../hooks/useNearbyAlertsViewModel';
+
+// ...
+
 const NearbyAlertsScreen: React.FC<NearbyAlertsScreenProps> = ({ navigation }) => {
-    const [alertas, setAlertas] = useState<AlertaCercana[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [myLocation, setMyLocation] = useState<{ lat: number, lng: number } | null>(null);
+    const { alerts, isLoading, myLocation, fetchNearbyAlerts } = useNearbyAlertsViewModel();
 
     useEffect(() => {
         fetchNearbyAlerts();
-    }, []);
+    }, [fetchNearbyAlerts]);
 
-    const fetchNearbyAlerts = async () => {
-        try {
-            setLoading(true);
-            const coords = await LocationService.getCurrentLocation();
-            if (!coords) {
-                Alert.alert('Error', 'No se pudo obtener tu ubicación');
-                setLoading(false);
-                return;
-            }
-
-            setMyLocation({ lat: coords.latitude, lng: coords.longitude });
-
-            const response = await api.get(`/alertas/cercanas`, {
-                params: {
-                    lat: coords.latitude,
-                    lng: coords.longitude,
-                    radio: 10000 // 10km
-                }
-            });
-
-            if (response.data.success) {
-                setAlertas(response.data.data);
-            }
-        } catch (error) {
-            console.error('Error fetching nearby alerts:', error);
-            Alert.alert('Error', 'No se pudieron cargar las alertas cercanas');
-        } finally {
-            setLoading(false);
-        }
+    const handleRefresh = () => {
+        fetchNearbyAlerts();
     };
 
     const openMaps = (lat: number, lng: number) => {
@@ -124,14 +97,14 @@ const NearbyAlertsScreen: React.FC<NearbyAlertsScreenProps> = ({ navigation }) =
             <GlobalHeaderWrapper showBackButton={true} />
 
             <FlatList
-                data={alertas}
+                data={alerts}
                 keyExtractor={(item) => item._id}
                 renderItem={renderItem}
                 contentContainerStyle={styles.listContent}
-                refreshing={loading}
-                onRefresh={fetchNearbyAlerts}
+                refreshing={isLoading}
+                onRefresh={handleRefresh}
                 ListEmptyComponent={
-                    !loading ? (
+                    !isLoading ? (
                         <View style={styles.emptyContainer}>
                             <Text style={styles.emptyText}>No hay alertas activas cerca de ti.</Text>
                         </View>

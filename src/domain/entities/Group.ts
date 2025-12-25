@@ -12,5 +12,6 @@ export interface Group {
     image?: string;
     members: GroupMember[];
     memberCount?: number;
+    code?: string;
     createdAt?: Date;
 }

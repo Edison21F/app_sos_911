@@ -9,35 +9,30 @@ Aplicación móvil de asistencia de emergencia y seguridad comunitaria desarroll
 *   **Contactos de Emergencia:** Gestión de una lista prioritaria de personas a notificar en caso de incidente.
 *   **Mapa de Incidentes:** Visualización de alertas activas y reportes de seguridad en tu zona (Nearby Alerts).
 *   **Perfil Médico y Personal:** Almacenamiento de información vital para socorristas.
+*   **Modo Offline:** Cola de alertas que se sincronizan automáticamente cuando recuperas la conexión.
 
 ## ✅ Estado Actual de Implementación
 
-Actualmente, la aplicación cuenta con los siguientes módulos desarrollados:
+Actualmente, la aplicación cuenta con los siguientes módulos desarrollados bajo **Clean Architecture**:
 
 *   **Autenticación:**
     *   Inicio de sesión y Registro de usuarios.
-    *   Pantalla de Bienvenida con botón SOS de acceso rápido.
 *   **Gestión de Perfil:**
-    *   Visualización y edición de datos personales.
+    *   Visualización y edición de datos personales y médicos.
     *   Gestión de múltiples números de teléfono.
-    *   Actualización de foto de perfil con acceso a cámara/galería.
 *   **Sistema de Alertas:**
-    *   Interfaz de activación de emergencia (SOS / 911).
-    *   Historial de notificaciones recibidas.
-    *   Calificación y respuesta a alertas (Falsa alarma, Atendida, etc.).
-*   **Navegación:**
-    *   Estructura completa de navegación (Stack Navigator).
-    *   Menú lateral (Sidebar) personalizado.
-*   **UI/UX:**
-    *   Diseño moderno con temas oscuros y degradados.
-    *   Componentes visuales responsivos y animados.
+    *   Interfaz de activación de emergencia (SOS).
+    *   Historial de alertas.
+    *   Gestión de estados (Activa, Resuelta, Falsa Alarma).
+*   **Grupos y Contactos:**
+    *   Gestión de grupos de seguridad.
+    *   Chat de grupo en tiempo real (Socket.io).
+*   **Ubicación:**
+    *   Rastreo en tiempo real durante emergencias.
 
 ## 🚀 Cómo Iniciar
 
-Sigue estos pasos para ejecutar el proyecto en tu entorno local:
-
 1.  **Instalar dependencias:**
-    Asegúrate de tener Node.js instalado y ejecuta:
     ```bash
     npm install --force
     ```
@@ -45,74 +40,71 @@ Sigue estos pasos para ejecutar el proyecto en tu entorno local:
 2.  **Iniciar el servidor de desarrollo:**
     ```bash
     npx expo start
-    o
-    npm run start
     ```
 
-3.  **Ejecutar en un dispositivo:**
-    -   **Android/iOS:** Escanea el código QR monstrado en la terminal con la app "Expo Go".
-    -   **Emulador:** Presiona `a` para Android o `i` para iOS en la terminal.
+## 🏗 Arquitectura del Proyecto
 
-## 📂 Estructura del Proyecto
+El proyecto ha sido refactorizado para seguir los principios de **Clean Architecture (Arquitectura Limpia)**. Esto asegura que la lógica de negocio sea independiente de frameworks, bases de datos y UI.
 
-El proyecto sigue una **Arquitectura en Capas (Layered Architecture)** para garantizar la separación de responsabilidades, escalabilidad y facilidad de mantenimiento.
-
-### Mapeo de Carpetas (`src/`)
+### Estructura de Carpetas (`src/`)
 
 ```
 src/
-├── api/            # Capa de Red
-│   └── api.ts      # Configuración de Axios, interceptores y manejo de tokens.
+├── domain/                 # 1. Capa de Dominio (Reglas de Negocio Puras)
+│   ├── entities/           # Objetos centrales del negocio (User, Alert, Contact).
+│   └── value-objects/      # Objetos inmutables (Email, Coordinates).
 │
-├── components/     # Componentes de Presentación (Reutilizables)
-│   ├── Header/     # Encabezados de pantalla.
-│   ├── Sidebar/    # Menú lateral de navegación.
-│   └── ...         # Otros componentes de UI puros.
+├── application/            # 2. Capa de Aplicación (Casos de Uso)
+│   ├── ports/              # Interfaces (Puertos) que definen contratos.
+│   │   ├── repositories/   # Interfaces para acceso a datos (IAuthRepository).
+│   │   └── services/       # Interfaces para servicios externos (ILocationService).
+│   └── use-cases/          # Lógica de aplicación específica (LoginUseCase, SendAlertUseCase).
+│       ├── auth/
+│       ├── alerts/
+│       └── ...
 │
-├── navigation/     # Configuración de Rutas
-│   └── Navigator.ts # Definición de Stack/Tab navigators y tipos de rutas.
+├── infrastructure/         # 3. Capa de Infraestructura (Implementaciones)
+│   ├── di/                 # Inyección de Dependencias (Container).
+│   ├── http/               # Cliente HTTP (Axios) y configuraciones de red.
+│   ├── repositories/       # Implementación de repositorios (AuthRepositoryApi).
+│   └── services/           # Implementación de servicios (SocketService, LocationService).
 │
-├── screens/        # Capa de Presentación (Vistas)
-│   ├── Auth/       # Pantallas de autenticación (Login, Register).
-│   ├── Emergency/  # Pantallas de alerta y SOS.
-│   ├── Profile/    # Gestión de perfil de usuario.
-│   └── ...         # Vistas principales de la aplicación.
+├── presentation/           # 4. Capa de Presentación (UI)
+│   ├── components/         # Componentes visuales reutilizables.
+│   ├── hooks/              # ViewModels (Custom Hooks) que conectan UI con Casos de Uso.
+│   ├── screens/            # Pantallas de la aplicación.
+│   ├── navigation/         # Configuración de rutas.
+│   └── styles/             # Tema y estilos globales.
 │
-├── services/       # Capa de Lógica de Negocio
-│   ├── auth.service.ts         # (Propuesto) Lógica de sesión y autenticación.
-│   ├── clientesService.ts      # Lógica relacionada con datos de clientes.
-│   ├── location.service.ts     # Manejo de geolocalización.
-│   └── socket.service.ts       # Comunicación en tiempo real.
-│
-├── theme/          # Estilos Globales
-│   └── theme.ts    # Definición de colores, tipografía y constantes de diseño.
-│
-└── utils/          # Utilidades
-    └── dimensions.ts # Helpers para diseño responsivo.
+├── config/                 # Configuración ambiental (Constantes, ENV).
+└── shared/                 # Utilidades compartidas (Formatters, Validators).
 ```
 
-## 🏗 Justificación de la Arquitectura
+### 🧠 Justificación de la Arquitectura
 
-Se ha elegido una **Arquitectura en Capas** por las siguientes razones:
+1.  **Independencia de Frameworks:**
+    La lógica de negocio (`domain` y `application`) no sabe que existe React Native o Expo. Esto facilita las pruebas unitarias y la migración futura.
 
-1.  **Separación de Responsabilidades (SoC):**
-    *   **Presentation Layer (`screens/`, `components/`)**: Se encarga únicamente de renderizar la UI y manejar la interacción del usuario. No debe contener lógica de negocio compleja ni llamadas directas a la base de datos o API cruda.
-    *   **Service Layer (`services/`)**: Centraliza la lógica de negocio y las llamadas a la API. Actúa como intermediario, transformando datos del backend para que la UI los consuma fácilmente.
-    *   **Data/Network Layer (`api/`)**: Maneja la configuración técnica de la comunicación HTTP (timeouts, headers, parseo de errores).
+2.  **Separación de Responsabilidades:**
+    *   **Presentation Layer:** Solo pinta la UI. Delega toda la lógica a los `ViewModels` (`hooks/`).
+    *   **ViewModels:** No llaman a APIs. Llaman a **Casos de Uso**.
+    *   **Application Layer:** Contiene los Casos de Uso (`execute()`). Orquesta el flujo de datos usando las interfaces de repositorios.
+    *   **Infrastructure Layer:** Implementa las interfaces. Aquí es donde vive Axios, Socket.io y AsyncStorage.
 
-2.  **Escalabilidad:**
-    Al tener servicios desacoplados, agregar nuevas funcionalidades (como un nuevo módulo de pagos o historial) no afecta a las pantallas existentes. Simplemente se inyecta el nuevo servicio.
+3.  **Inyección de Dependencias (DI):**
+    Utilizamos un contenedor (`infrastructure/di/container.ts`) para instanciar las dependencias. Las pantallas y ViewModels importan este contenedor, lo que permite cambiar implementaciones fácilmente (por ejemplo, cambiar una API REST por Firebase sin tocar la UI).
 
-3.  **Mantenibilidad:**
-    Si cambia la URL de la API o la estructura de los endpoints, solo es necesario actualizar los archivos en `services/` o `api/`, sin tener que buscar y reemplazar en docenas de pantallas.
+4.  **Testeabilidad:**
+    Al desacoplar la lógica de la UI y de la infraestructura, es trivial escribir tests para los Casos de Uso simulando (mocking) los repositorios.
 
-4.  **Reusabilidad:**
-    Los componentes en `components/` son "tontos" (presentacionales), lo que permite usarlos en múltiples pantallas con diferentes datos.
+### Flujo de Datos Típico
 
-## ℹ️ Información General
+1.  **UI (`Dashboard.tsx`)** llama a una función del **ViewModel** (`useDashboardViewModel`).
+2.  **ViewModel** llama a un **Caso de Uso** (`GetCurrentUserUseCase`).
+3.  **Caso de Uso** pide datos a una **Interfaz de Repositorio** (`IAuthRepository`).
+4.  **Infraestructura** (`AuthRepositoryApi`) realiza la petición HTTP real y devuelve datos al Caso de Uso.
+5.  **Caso de Uso** devuelve Entidades de Dominio al ViewModel.
+6.  **ViewModel** actualiza el estado local (React State) y la UI se renderiza.
 
-*   **Nombre:** app_sos_911
-*   **Versión:** 2.1.0
-*   **Framework:** Expo SDK 54
-*   **Navegación:** React Navigation 7
-*   **Cliente HTTP:** Axios
+---
+**Proyecto Generado y Mantenido con Asistencia de IA Avanzada (Deepmind).**

@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { AlertRepositoryApi } from '../../../infrastructure/repositories/AlertRepositoryApi';
-import { SendAlertUseCase } from '../../../application/use-cases/alerts/SendAlertUseCase';
-import { Alert, AlertLocation } from '../../../domain/entities/Alert';
+import { AlertRepositoryApi } from '../../infrastructure/repositories/AlertRepositoryApi';
+import { SendAlertUseCase } from '../../application/use-cases/alerts/SendAlertUseCase';
+import { Alert, AlertLocation } from '../../domain/entities/Alert';
 
 // Composition Root
+import { DeviceBehaviorService } from '../../infrastructure/services/deviceBehavior.service';
 const alertRepository = new AlertRepositoryApi();
-const sendAlertUseCase = new SendAlertUseCase(alertRepository);
+const sendAlertUseCase = new SendAlertUseCase(alertRepository, new DeviceBehaviorService());
 
 export const useAlertViewModel = () => {
     const [isLoading, setIsLoading] = useState(false);
