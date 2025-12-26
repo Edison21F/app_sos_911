@@ -1,4 +1,4 @@
-import { Client, ClientPhone } from '../../domain/entities/Client';
+import { Client, ClientPhone } from '../../../domain/entities/Client';
 
 export interface UpdateClientData {
     name?: string;
