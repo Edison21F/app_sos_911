@@ -6,6 +6,8 @@ import { Feather, FontAwesome5 } from '@expo/vector-icons';
 
 import HomeScreen from '../screens/Home/Home';
 import NotificationsScreen from '../screens/Notifications/Notifications';
+import AlertHistoryScreen from '../screens/Details/AlertHistory';
+import NearbyAlertsScreen from '../screens/Alerts/NearbyAlertsScreen';
 import EmergencyContactsScreen from '../screens/EmergencyContacts/EmergencyContacts';
 import GroupsScreen from '../screens/Groups/Groups';
 import DashboardScreen from '../screens/Dashboard/Dashboard';
@@ -78,10 +80,11 @@ const TabNavigator = () => {
 
             <Tab.Screen
                 name="Alertas"
-                component={NotificationsScreen}
+                component={AlertHistoryScreen}
                 options={{
+                    tabBarLabel: 'Historial',
                     tabBarIcon: ({ color, size }) => (
-                        <Feather name="bell" size={24} color={color} />
+                        <Feather name="clock" size={24} color={color} />
                     )
                 }}
             />

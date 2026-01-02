@@ -92,7 +92,7 @@ export class AlertRepositoryApi implements IAlertRepository {
     }
 
     async updateAlertStatus(alertId: string, status: string, comment?: string): Promise<void> {
-        await client.patch(`/alertas/${alertId}/estado`, {
+        await client.post(`/alertas/${alertId}/estado`, {
             estado: status,
             comentario: comment
         });

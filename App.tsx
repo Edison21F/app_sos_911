@@ -32,6 +32,7 @@ import { theme } from './src/presentation/styles/theme';
 import io, { Socket } from 'socket.io-client';
 import client from './src/infrastructure/http/client';
 import EmergencyAlertModal from './src/presentation/components/Modals/EmergencyAlertModal';
+import { NotificationProvider } from './src/presentation/contexts/NotificationContext';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -66,7 +67,7 @@ export default function App() {
 
   const setupSocket = (userId: string) => {
     // @ts-ignore
-    const baseURL = client.defaults.baseURL || 'http://192.168.100.225:4000';
+    const baseURL = client.defaults.baseURL || 'http://192.168.100.225:3000';
     socketRef.current = io(baseURL);
 
     socketRef.current.on('connect', () => {
@@ -91,7 +92,8 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <NavigationContainer>
+      <NotificationProvider>
+        <NavigationContainer>
         <Stack.Navigator
           initialRouteName={initialRoute}
           screenOptions={{
@@ -127,7 +129,8 @@ export default function App() {
           onClose={() => setIsAlertVisible(false)}
           alertData={alertData}
         />
-      </NavigationContainer>
+        </NavigationContainer>
+      </NotificationProvider>
     </SafeAreaProvider>
   );
 }

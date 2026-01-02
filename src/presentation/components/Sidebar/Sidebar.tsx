@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { LogOut, Home, User, PhoneCall, Users, Info, MapPin, Bell, History, GitFork } from 'lucide-react-native';
+import { LogOut, Home,PawPrint, User, PhoneCall, Users, Info, MapPin, Bell, History, GitFork } from 'lucide-react-native';
 import { styles } from './SidebarStyles';
 import { CustomSidebarProps, MenuItem } from './types';
 import { RootStackParamList } from '../../navigation/Navigator';
@@ -33,6 +33,8 @@ const CustomSidebar: React.FC<CustomSidebarProps> = ({ isOpen, onClose }) => {
     { title: 'Notificaciónes', screen: 'Notifications' },
     { title: 'Historial de Alertas', screen: 'AlertHistory' },
     { title: 'Información', screen: 'Information' },
+    { title: 'Mascotas', screen: 'Pets' },
+
 
   ];
 
@@ -79,6 +81,8 @@ const CustomSidebar: React.FC<CustomSidebarProps> = ({ isOpen, onClose }) => {
     if (normalizedTitle.includes('ubicación')) return <MapPin size={iconSize} color={iconColor} />;
     if (normalizedTitle.includes('notificación')) return <Bell size={iconSize} color={iconColor} />;
     if (normalizedTitle.includes('información')) return <Info size={iconSize} color={iconColor} />;
+    if (normalizedTitle.includes('mascotas')) return <PawPrint size={iconSize} color={iconColor} />;
+
     if (normalizedTitle.includes('historial') || normalizedTitle.includes('alerta')) {
       return <History size={iconSize} color={iconColor} />;
 

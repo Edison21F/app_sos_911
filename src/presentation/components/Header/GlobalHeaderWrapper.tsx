@@ -4,12 +4,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import client from '../../../infrastructure/http/client';
 import ModernHeader from './ModernHeader';
+import { useNotificationContext } from '../../contexts/NotificationContext';
 
 const GlobalHeaderWrapper = (props: any) => {
     const navigation = useNavigation<any>();
     const [userName, setUserName] = useState("Usuario");
     const [profileImage, setProfileImage] = useState<string | null>(null);
-    const [notificationCount, setNotificationCount] = useState(0);
+    const { notificationCount } = useNotificationContext();
 
     const fetchData = async () => {
         try {
@@ -28,8 +29,6 @@ const GlobalHeaderWrapper = (props: any) => {
                         setProfileImage(`${API_BASE_URL}/uploads/profiles/${response.data.foto_perfil}`);
                     }
                 }
-                // Mock notification count or fetch
-                setNotificationCount(2);
             }
         } catch (e) { console.log('Error fetching header data', e); }
     };

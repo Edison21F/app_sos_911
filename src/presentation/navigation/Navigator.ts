@@ -17,6 +17,7 @@ export type RootStackParamList = {
   MainTabs: undefined;
   Groups: undefined;
   AddGroup: undefined;
+  Pets: undefined;
   GroupChat: {
     group: Group;
   };

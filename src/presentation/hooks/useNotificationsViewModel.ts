@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { container } from '../../infrastructure/di/container';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { format } from 'date-fns';
@@ -38,6 +38,38 @@ export const useNotificationsViewModel = () => {
             setLoading(false);
             setRefreshing(false);
         }
+    }, []);
+
+    useEffect(() => {
+        try {
+            container.liveTrackingService.onNewAlert((newAlert: any) => {
+                try {
+                    console.log('New notification received:', newAlert);
+                    const notification: Notification = {
+                        id: newAlert._id || Math.random().toString(),
+                        title: `Alerta: ${newAlert.tipo || 'GENERAL'}`,
+                        description: newAlert.detalles || 'Sin detalles adicionales',
+                        time: newAlert.fecha_creacion ? format(new Date(newAlert.fecha_creacion), "d MMMM, h:mm a", { locale: es }) : 'Reciente',
+                        type: 'clientes',
+                        status: 'pending',
+                        location: {
+                            latitude: newAlert.ubicacion?.latitud || 0,
+                            longitude: newAlert.ubicacion?.longitud || 0
+                        },
+                        responseComment: ''
+                    };
+                    setNotifications(prev => [notification, ...prev]);
+                } catch (error) {
+                    console.error('Error processing new notification:', error);
+                }
+            });
+        } catch (error) {
+            console.error('Error setting up notification listener:', error);
+        }
+
+        return () => {
+            // Note: socket off might need to be handled differently
+        };
     }, []);
 
     const refresh = useCallback(() => {

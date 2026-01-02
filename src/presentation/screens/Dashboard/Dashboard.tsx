@@ -30,9 +30,8 @@ const DashboardScreen = () => {
             <SafeAreaView style={{ flex: 1 }}>
                 <ModernHeader
                     userName={user ? user.name.split(' ')[0] : 'Usuario'}
-                    notificationCount={2}
                     onLogout={() => { /* TODO: Move to VM or separate auth hook? For now keep empty as per original placeholder */ }}
-                    onNotificationPress={() => navigation.navigate('Alertas' as any)}
+                    onNotificationPress={() => navigation.navigate('Notifications' as any)}
                     onProfilePress={() => navigation.navigate('Profile' as any)}
                     profileImage={getProfileImageUrl()}
                 />

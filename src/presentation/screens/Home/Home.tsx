@@ -269,7 +269,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         {/* NEW MODERN HEADER */}
         <ModernHeader
           userName={userName}
-          notificationCount={2}
           onLogout={handleLogout}
           onNotificationPress={() => navigation.navigate('Notifications')}
           onProfilePress={() => navigation.navigate('Profile')}

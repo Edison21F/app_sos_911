@@ -22,9 +22,13 @@ export const useActiveEmergencyViewModel = () => {
     };
 
     const cancelEmergency = async (id?: string) => {
-        const targetId = id || currentAlert?.id;
-        // Always stop behaviors first
-        await container.stopEmergencyUseCase.execute(targetId || '');
+        try {
+            const targetId = id || currentAlert?.id;
+            // Always stop behaviors first
+            await container.stopEmergencyUseCase.execute(targetId || '');
+        } catch (error) {
+            console.error('Error stopping emergency', error);
+        }
 
         navigation.reset({
             index: 0,
@@ -48,9 +52,12 @@ export const useActiveEmergencyViewModel = () => {
         }
     };
 
+    const stopEmergency = cancelEmergency; // Alias for compatibility
+
     return {
         startEmergency,
         cancelEmergency,
+        stopEmergency,
         currentAlert,
         getMedicalData
     };

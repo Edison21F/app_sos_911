@@ -396,16 +396,6 @@ const ProfileScreen = () => {
 
               <View style={styles.divider} />
 
-              {/* Historial */}
-              <TouchableOpacity style={styles.optionRow} onPress={() => navigation.navigate('AlertHistory')}>
-                <View style={[styles.phoneIconBg, { backgroundColor: 'rgba(255, 165, 0, 0.1)' }]}>
-                  <Feather name="clock" size={16} color="#FFA500" />
-                </View>
-                <Text style={styles.optionText}>Historial de Alertas</Text>
-                <Feather name="chevron-right" size={18} color="#666" />
-              </TouchableOpacity>
-
-              <View style={styles.divider} />
 
               {/* Info */}
               <TouchableOpacity style={styles.optionRow} onPress={() => navigation.navigate('Information')}>
