@@ -1,56 +1,82 @@
 import { useState, useCallback } from 'react';
 import { container } from '../../infrastructure/di/container';
 import { User } from '../../domain/entities/User';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import client from '../../infrastructure/http/client'; // Need to construct URL
 
+/**
+ * CAPA DE PRESENTACIÓN: ViewModel (Hook)
+ * 
+ * RESPONSABILIDAD:
+ * Gestionar el estado de la pantalla Home.
+ * Orquesta los casos de uso para:
+ * - Obtener y sincronizar datos del usuario
+ * - Gestionar preferencias de auto-login
+ * - Manejar cierre de sesión
+ * 
+ * PRINCIPIO CLEAN ARCHITECTURE:
+ * Este ViewModel SOLO interactúa con Casos de Uso, nunca directamente
+ * con Repositorios o Servicios de Infraestructura.
+ */
 export const useHomeViewModel = () => {
     const [user, setUser] = useState<User | null>(null);
     const [autoLoginEnabled, setAutoLoginEnabled] = useState(true);
     const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
 
+    /**
+     * Inicializa la pantalla Home obteniendo datos del usuario.
+     * Usa exclusivamente Casos de Uso para todas las operaciones.
+     */
     const initHome = useCallback(async () => {
         try {
-            // AutoLogin Setting
-            const setting = await AsyncStorage.getItem('autoLoginEnabled');
-            if (setting !== null) setAutoLoginEnabled(setting === 'true');
+            // Obtener preferencia de Auto-Login via Caso de Uso
+            const setting = await container.getAutoLoginSettingUseCase.execute();
+            setAutoLoginEnabled(setting);
 
-            // Get Current User (includes profile image now)
+            // Obtener Usuario Actual via Caso de Uso
             const currentUser = await container.getCurrentUserUseCase.execute();
             if (currentUser) {
                 setUser(currentUser);
 
-                // Start Location Sync
+                // Iniciar Sincronización de Ubicación via Caso de Uso
                 await container.startLocationSyncUseCase.execute(currentUser.id.toString());
 
-                // Construct Profile Image URL
+                // Obtener URL de imagen de perfil via Caso de Uso
                 if (currentUser.profileImage) {
-                    // @ts-ignore
-                    const API_BASE_URL = client.defaults.baseURL ? client.defaults.baseURL.replace('/api', '') : '';
-                    setProfileImageUrl(`${API_BASE_URL}/uploads/profiles/${currentUser.profileImage}`);
+                    const url = container.getProfileImageUrlUseCase.execute(currentUser.profileImage);
+                    setProfileImageUrl(url);
                 }
             }
         } catch (error) {
-            console.error('Error initializing Home:', error);
+            console.error('[useHomeViewModel] Error initializing Home:', error);
         }
     }, []);
 
-    const toggleAutoLogin = async () => {
+    /**
+     * Alterna el estado de auto-login.
+     * Usa el caso de uso ToggleAutoLoginSettingUseCase.
+     */
+    const toggleAutoLogin = async (): Promise<boolean> => {
         try {
-            const newValue = !autoLoginEnabled;
+            const newValue = await container.toggleAutoLoginSettingUseCase.execute(autoLoginEnabled);
             setAutoLoginEnabled(newValue);
-            await AsyncStorage.setItem('autoLoginEnabled', newValue.toString());
             return newValue;
         } catch (error) {
-            console.error('Error toggling auto login:', error);
+            console.error('[useHomeViewModel] Error toggling auto login:', error);
             throw error;
         }
     };
 
-    const logout = async () => {
-        await container.logoutUseCase.execute();
-        // Also stop location sync?
-        await container.locationService.stopLocationSync();
+    /**
+     * Cierra la sesión del usuario.
+     * Ejecuta logout y detiene sincronización de ubicación.
+     */
+    const logout = async (): Promise<void> => {
+        try {
+            await container.logoutUseCase.execute();
+            await container.stopLocationSyncUseCase.execute();
+        } catch (error) {
+            console.error('[useHomeViewModel] Error during logout:', error);
+            throw error;
+        }
     };
 
     return {

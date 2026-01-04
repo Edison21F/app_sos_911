@@ -29,8 +29,8 @@ export class AlertRepositoryApi implements IAlertRepository {
             // Validate payload minimal requires before sending? 
             if (!payload.idUsuarioSql) throw new Error('Usuario no identificado');
 
-            const response = await client.post('/alertas/enviar', payload);
-            return this.mapToAlert(response.data.alerta || response.data);
+            const response = await client.post('/alertas', payload);
+            return this.mapToAlert(response.data.data || response.data.alerta || response.data);
         } catch (error) {
             console.log('Sending alert failed, queuing offline...');
             payload.emitida_offline = true;

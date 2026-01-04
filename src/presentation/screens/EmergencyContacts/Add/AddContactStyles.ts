@@ -1,118 +1,139 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Platform } from 'react-native';
 import { normalize } from '../../../../shared/utils/dimensions';
 
 export const styles = StyleSheet.create({
   backgroundImage: {
     flex: 1,
     resizeMode: 'cover',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   container: {
     flex: 1,
-    paddingTop: normalize(20),
-    justifyContent: 'center',
-    alignItems: 'center',
+    paddingTop: Platform.OS === 'android' ? 30 : 0,
   },
   scrollContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexGrow: 1,
+    paddingBottom: 40,
   },
-  form: {
-    backgroundColor: '#fff',
-    width: normalize(320), // Establece un ancho fijo
-    padding: normalize(20),
-    borderRadius: normalize(15),
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    minHeight: normalize(400), // Establece una altura mínima
-    maxHeight: 'auto', // Permite que el formulario se expanda si es necesario
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: normalize(20),
+    paddingVertical: normalize(15),
+    marginBottom: normalize(10),
   },
   backButton: {
-    alignSelf: 'flex-start',
-    padding: normalize(10),
-    marginBottom: normalize(10),
+    padding: normalize(8),
+    borderRadius: 50,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  headerTitle: {
+    fontSize: normalize(24),
+    fontWeight: 'bold',
+    color: '#fff',
+    marginLeft: normalize(15),
+    letterSpacing: 1,
+  },
+  form: {
+    paddingHorizontal: normalize(20),
+  },
+  // Tab Selector
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    borderRadius: normalize(15),
+    padding: 4,
+    marginBottom: normalize(30),
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: normalize(12),
+    alignItems: 'center',
+    borderRadius: normalize(12),
+  },
+  activeTab: {
+    backgroundColor: '#922B21', // Deep Red
+  },
+  tabText: {
+    color: '#aaa',
+    fontSize: normalize(14),
+    fontWeight: '600',
+  },
+  activeTabText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+
+  // Input Fields
+  fieldContainer: {
+    marginBottom: normalize(20),
   },
   label: {
-    fontSize: normalize(16),
+    fontSize: normalize(14),
+    color: 'rgba(255,255,255,0.7)',
     marginBottom: normalize(8),
-    fontWeight: 'bold',
+    marginLeft: 4,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   input: {
-    height: normalize(40),
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: normalize(5),
-    paddingLeft: normalize(10),
-    marginBottom: normalize(15),
-    backgroundColor: '#fff',
-  },
-  saveButton: {
-    flexDirection: 'row',
-    backgroundColor: '#00ACAC',
-    paddingVertical: normalize(12),
-    borderRadius: normalize(5),
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: normalize(10),
-  },
-  saveButtonText: {
+    height: normalize(50),
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: normalize(15),
+    paddingHorizontal: normalize(20),
     color: '#fff',
     fontSize: normalize(16),
-    fontWeight: 'bold',
-    marginLeft: normalize(8),
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
-  saveIcon: {
-    marginRight: normalize(8),
-  },
-  imagePicker: {
-    alignSelf: 'center',
-    marginBottom: normalize(20),
-    width: normalize(100),
-    height: normalize(100),
-    borderRadius: normalize(50),
-    backgroundColor: '#E0E0E0',
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
-  },
-  contactImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: normalize(50),
-  },
-  imagePlaceholder: {
-    color: '#666',
-    fontSize: normalize(12),
-    textAlign: 'center',
-  },
+
+  // Image Picker
   imagePickerContainer: {
-    alignSelf: 'center',
-    marginBottom: normalize(20),
     alignItems: 'center',
+    marginBottom: normalize(30),
   },
   initialsContainer: {
     width: normalize(100),
     height: normalize(100),
     borderRadius: normalize(50),
-    backgroundColor: '#0891b2',
+    backgroundColor: 'rgba(255,255,255,0.1)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: normalize(8),
-  },
-  initialsText: {
-    color: '#fff',
-    fontSize: normalize(36),
-    fontWeight: 'bold',
-    textAlign: 'center',
+    borderWidth: 2,
+    borderColor: '#922B21',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 8,
   },
   imageLabel: {
-    fontSize: normalize(12),
-    color: '#666',
-    textAlign: 'center',
+    marginTop: normalize(10),
+    fontSize: normalize(14),
+    color: '#ccc',
+  },
+
+  // Button
+  saveButton: {
+    flexDirection: 'row',
+    backgroundColor: '#D32F2F', // Brighter Red
+    paddingVertical: normalize(16),
+    borderRadius: normalize(15),
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: normalize(20),
+    shadowColor: "#D32F2F",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontSize: normalize(18),
+    fontWeight: 'bold',
+    marginLeft: normalize(10),
   },
 });

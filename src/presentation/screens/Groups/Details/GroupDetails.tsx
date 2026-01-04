@@ -109,10 +109,10 @@ const GroupDetails: React.FC<GroupDetailsProps> = ({ navigation, route }) => {
                         <Text style={styles.groupDesc}>{group.description || 'Sin descripción'}</Text>
 
                         {/* Code is not in standard Group entity, need to check if mapToGroup includes it or if we need to extend Group entity */}
-                        {(group as any).codigo && (
+                        {group.code && (
                             <View style={styles.codeContainer}>
                                 <Text style={styles.codeLabel}>Código de Acceso:</Text>
-                                <Text style={styles.codeValue}>{(group as any).codigo}</Text>
+                                <Text style={styles.codeValue}>{group.code}</Text>
                             </View>
                         )}
                     </View>

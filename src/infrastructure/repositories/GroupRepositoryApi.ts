@@ -76,12 +76,12 @@ export class GroupRepositoryApi implements IGroupRepository {
             name: data.nombre,
             description: data.descripcion,
             image: data.imagen,
-            members: data.miembros ? data.miembros.map((m: any) => ({
+            members: Array.isArray(data.miembros) ? data.miembros.map((m: any) => ({
                 id: m.id,
                 name: m.nombre,
                 isAdmin: m.es_admin
             })) : [],
-            memberCount: data.miembros?.length || data.cantidad_miembros || 0,
+            memberCount: typeof data.miembros === 'number' ? data.miembros : (data.miembros?.length || data.cantidad_miembros || 0),
             code: data.codigo,
             createdAt: new Date(data.fecha_creacion || new Date())
         };

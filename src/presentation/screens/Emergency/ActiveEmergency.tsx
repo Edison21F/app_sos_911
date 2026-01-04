@@ -16,7 +16,7 @@ const ActiveEmergencyScreen = () => {
     const route = useRoute<any>();
     const navigation = useNavigation<any>();
     const { type, isOffline, alertData } = route.params || {};
-    const { stopEmergency, getMedicalData } = useActiveEmergencyViewModel();
+    const { cancelEmergency: stopEmergency, getMedicalData } = useActiveEmergencyViewModel();
 
     const [pulse] = useState(new Animated.Value(1));
     const mapRef = useRef<MapView>(null);
@@ -203,19 +203,19 @@ const ActiveEmergencyScreen = () => {
                             <ScrollView>
                                 <View style={styles.medItem}>
                                     <Text style={styles.medLabel}>Tipo de Sangre</Text>
-                                    <Text style={styles.medValue}>{medicalData?.tipo_sangre || 'No especificado'}</Text>
+                                    <Text style={styles.medValue}>{medicalData?.bloodType || 'No especificado'}</Text>
                                 </View>
                                 <View style={styles.medItem}>
                                     <Text style={styles.medLabel}>Alergias</Text>
-                                    <Text style={styles.medValue}>{medicalData?.alergias || 'Ninguna'}</Text>
+                                    <Text style={styles.medValue}>{medicalData?.allergies || 'Ninguna'}</Text>
                                 </View>
                                 <View style={styles.medItem}>
                                     <Text style={styles.medLabel}>Padecimientos</Text>
-                                    <Text style={styles.medValue}>{medicalData?.padecimiento || 'Ninguno'}</Text>
+                                    <Text style={styles.medValue}>{medicalData?.conditions || 'Ninguno'}</Text>
                                 </View>
                                 <View style={styles.medItem}>
                                     <Text style={styles.medLabel}>Medicamentos</Text>
-                                    <Text style={styles.medValue}>{medicalData?.medicamentos || 'Ninguno'}</Text>
+                                    <Text style={styles.medValue}>{medicalData?.medications || 'Ninguno'}</Text>
                                 </View>
                             </ScrollView>
                         )}

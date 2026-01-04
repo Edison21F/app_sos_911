@@ -1,10 +1,17 @@
-import { IClientRepository, UpdateClientData } from '../../application/ports/repositories/IClientRepository';
+import { IClientRepository, UpdateClientData, DashboardStats } from '../../application/ports/repositories/IClientRepository';
 import { Client, ClientPhone } from '../../domain/entities/Client';
 import client from '../http/client';
 import { Platform } from 'react-native';
 
 const API_BASE_URL = client.defaults.baseURL ? client.defaults.baseURL.replace('/api', '') : '';
 
+/**
+ * CAPA DE INFRAESTRUCTURA: Repositorio
+ * 
+ * RESPONSABILIDAD:
+ * Implementación concreta del acceso a datos del cliente.
+ * Realiza peticiones HTTP al backend y mapea las respuestas a entidades del dominio.
+ */
 export class ClientRepositoryApi implements IClientRepository {
     async getClientProfile(clientId: string): Promise<Client> {
         const response = await client.get(`/clientes/detalle/${clientId}`);
@@ -109,5 +116,16 @@ export class ClientRepositoryApi implements IClientRepository {
 
     async deleteClientPhone(phoneId: string | number): Promise<void> {
         await client.delete(`/clientes_numeros/eliminar/${phoneId}`);
+    }
+
+    async getDashboardStats(clientId: string): Promise<DashboardStats> {
+        const response = await client.get(`/clientes/stats/${clientId}`);
+        return response.data.stats;
+    }
+
+    getProfileImageUrl(imagePath: string): string {
+        if (!imagePath) return '';
+        if (imagePath.startsWith('http')) return imagePath;
+        return `${API_BASE_URL}/uploads/profiles/${imagePath}`;
     }
 }

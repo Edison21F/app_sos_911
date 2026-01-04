@@ -11,7 +11,8 @@ import {
   Alert,
   Modal,
   Linking,
-  Switch
+  Switch,
+  ScrollView
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, G } from 'react-native-svg';
@@ -23,26 +24,38 @@ import { normalize } from '../../../shared/utils/dimensions';
 import { HomeScreenProps } from './types';
 import { theme } from '../../styles/theme';
 import { useHomeViewModel } from '../../hooks/useHomeViewModel';
+import { useCooldownTimer } from '../../hooks/useCooldownTimer';
 
+/**
+ * CAPA DE PRESENTACIÓN: Pantalla (View)
+ * 
+ * RESPONSABILIDAD:
+ * Renderizar la pantalla principal (Home) con el botón de pánico SOS.
+ * Integra animaciones y controles de seguridad (modo seguro).
+ * 
+ * INTERACCIÓN:
+ * Consume el `useHomeViewModel` para obtener usuario y configuraciones.
+ */
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const { user, profileImageUrl, initHome, toggleAutoLogin, autoLoginEnabled, logout } = useHomeViewModel();
 
-  // Local UI State
+  // Hook de cooldown para el botón SOS (extraído para Clean Architecture)
+  const { isCooldownActive, cooldownTime, formatTime } = useCooldownTimer();
+
+  // Estado local de la UI
   const [isButtonActive, setIsButtonActive] = useState(false);
   const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false);
   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
-  const [isCooldownActive, setIsCooldownActive] = useState(false);
-  const [cooldownTime, setCooldownTime] = useState(0);
   const [rotation, setRotation] = useState(0);
   const animationFrameRef = useRef<number>(0);
   const pulseAnimValue = useRef(new Animated.Value(1)).current;
   const securityButtonFade = useRef(new Animated.Value(1)).current;
 
-  // Header Data derived from ViewModel
+  // Datos del Header derivados del ViewModel
   const userName = user ? user.name.split(' ')[0] : "Usuario";
 
   useEffect(() => {
-    // Animate rotation
+    // Animar rotación
     const animate = () => {
       setRotation(prev => (prev + 0.3) % 360);
       animationFrameRef.current = requestAnimationFrame(animate);
@@ -66,18 +79,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     }
   }, [isAlertModalOpen, isCooldownActive]);
 
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isCooldownActive && cooldownTime > 0) {
-      interval = setInterval(() => {
-        setCooldownTime(prev => {
-          if (prev <= 1) { setIsCooldownActive(false); return 0; }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => { if (interval) clearInterval(interval); };
-  }, [isCooldownActive, cooldownTime]);
+  // NOTA: La lógica del timer de cooldown está ahora encapsulada en useCooldownTimer
+  // siguiendo el principio de separación de responsabilidades de Clean Architecture
 
   const handleResolvePress = () => setIsButtonActive(false);
 
@@ -92,7 +95,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     } catch (error) { Alert.alert('Error', 'No se pudo cambiar la configuración'); }
   };
 
-  // Logout Logic
+  // Lógica de Cierre de Sesión
   const handleLogout = () => {
     Alert.alert(
       "Cerrar Sesión",
@@ -183,19 +186,16 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     navigation.navigate('EmergencySelection');
   };
 
-  const formatCooldownTime = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-  };
+  // formatCooldownTime ahora viene del hook useCooldownTimer como formatTime
 
-  // Alert Modal
+  // Modal de Alerta
   const renderAlertModal = () => isAlertModalOpen ? (<View />) : null;
 
   const renderFuturisticElements = () => {
-    const centerX = normalize(200);
-    const centerY = normalize(200);
-    const maxRadius = normalize(190);
+    // Adjusted sizes for new 280x280 container
+    const centerX = normalize(140);
+    const centerY = normalize(140);
+    const maxRadius = normalize(130);
     return (
       <Svg style={styles.linesContainer}>
         <G transform={`rotate(${rotation}, ${centerX}, ${centerY})`}>
@@ -245,7 +245,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             {isCooldownActive ? (
               <View style={styles.buttonContent}>
                 <Text style={styles.buttonText}>SOS</Text>
-                <Text style={styles.subtitleText}>Disponible en {formatCooldownTime(cooldownTime)}</Text>
+                <Text style={styles.subtitleText}>Disponible en {formatTime(cooldownTime)}</Text>
               </View>
             ) : (
               <View style={styles.buttonContent}>
@@ -266,7 +266,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   return (
     <LinearGradient colors={theme.colors.gradientBackground} style={styles.backgroundImage} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
       <SafeAreaView style={styles.container}>
-        {/* NEW MODERN HEADER */}
+        {/* NUEVO HEADER MODERNO */}
         <ModernHeader
           userName={userName}
           onLogout={handleLogout}
@@ -276,10 +276,14 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         />
 
         <Text style={[styles.title, isButtonActive && { marginTop: normalize(18) }]}>
-          {isAlertModalOpen ? "Alerta activa" : isButtonActive ? "Alerta activa" : isCooldownActive ? `Disponible en ${formatCooldownTime(cooldownTime)}` : "Un toque para tu seguridad"}
+          {isAlertModalOpen ? "Alerta activa" : isButtonActive ? "Alerta activa" : isCooldownActive ? `Disponible en ${formatTime(cooldownTime)}` : "Un toque para tu seguridad"}
         </Text>
 
-        <View style={[styles.content, { paddingBottom: 120 }]}>
+        <ScrollView
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+          alwaysBounceVertical={false}
+        >
           <View style={styles.buttonContainer}>
             {renderFuturisticElements()}
             <Animated.View style={[styles.outerButton, isButtonActive && styles.outerButtonActive]}>
@@ -298,14 +302,17 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             <Text style={styles.nearbyValuesText}>Alertas Cercanas</Text>
           </TouchableOpacity>
           <View style={{ height: 20 }} />
-        </View>
 
-        <Animated.View style={[styles.securityButton, { opacity: securityButtonFade }]}>
-          <TouchableOpacity style={styles.securityButtonContent} onPress={() => setIsSecurityModalOpen(true)} activeOpacity={0.8}>
-            <Shield size={normalize(20)} color={theme.colors.primary} />
-            <Text style={styles.securityButtonText}>Seguridad de Sesión</Text>
-          </TouchableOpacity>
-        </Animated.View>
+          {/* Security Button now part of content flow */}
+          <Animated.View style={[styles.securityButton, { opacity: securityButtonFade }]}>
+            <TouchableOpacity style={styles.securityButtonContent} onPress={() => setIsSecurityModalOpen(true)} activeOpacity={0.8}>
+              <Shield size={normalize(20)} color={theme.colors.primary} />
+              <Text style={styles.securityButtonText}>Seguridad de Sesión</Text>
+            </TouchableOpacity>
+          </Animated.View>
+
+        </ScrollView>
+
         {renderSecurityModal()}
         {renderAlertModal()}
       </SafeAreaView>

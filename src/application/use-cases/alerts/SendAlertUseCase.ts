@@ -10,8 +10,17 @@ export class SendAlertUseCase {
 
     async execute(type: Alert['type'], location: AlertLocation, groupId?: string): Promise<Alert> {
         // 1. Trigger Device Behavior (Vibration/Sound)
-        // Map alert type to behavior type if necessary, or use same enum string
-        await this.deviceService.triggerBehavior(type as any);
+        const behaviorMap: Record<string, string> = {
+            'MEDICA': 'MEDICAL',
+            'PELIGRO': 'DANGER',
+            'INCENDIO': 'FIRE',
+            'TRANSITO': 'TRAFFIC',
+            'PREVENTIVA': 'PREVENTIVE',
+            'SOS': 'DANGER',
+            '911': 'DANGER'
+        };
+        const behaviorType = behaviorMap[type] || 'DANGER';
+        await this.deviceService.triggerBehavior(behaviorType as any);
 
         // 2. Validate location
         if (!location.latitude || !location.longitude) {
