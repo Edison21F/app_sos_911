@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { theme } from '../../styles/theme';
+import { useNotificationContext } from '../../contexts/NotificationContext';
 
 interface ModernHeaderProps {
     userName: string;
@@ -16,7 +17,7 @@ interface ModernHeaderProps {
 
 const ModernHeader: React.FC<ModernHeaderProps> = ({
     userName,
-    notificationCount = 0,
+    notificationCount,
     onLogout,
     onNotificationPress,
     onProfilePress,
@@ -24,6 +25,8 @@ const ModernHeader: React.FC<ModernHeaderProps> = ({
     showBackButton,
     onBackPress
 }) => {
+    const { notificationCount: contextCount } = useNotificationContext();
+    const displayCount = notificationCount !== undefined ? notificationCount : contextCount;
 
     // Get initials for avatar fallback
     const getInitials = (name: string) => {
@@ -65,9 +68,9 @@ const ModernHeader: React.FC<ModernHeaderProps> = ({
                     onPress={onNotificationPress}
                 >
                     <Feather name="bell" size={20} color="#fff" />
-                    {notificationCount > 0 && (
+                    {displayCount > 0 && (
                         <View style={styles.badge}>
-                            <Text style={styles.badgeText}>{notificationCount > 9 ? '9+' : notificationCount}</Text>
+                            <Text style={styles.badgeText}>{displayCount > 9 ? '9+' : displayCount}</Text>
                         </View>
                     )}
                 </TouchableOpacity>

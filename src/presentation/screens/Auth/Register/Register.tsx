@@ -76,12 +76,21 @@ export default function RegisterScreen() {
 
       const tipo_dispositivo = Platform.OS === 'android' ? 'Android' : 'iOS';
       const dataToSend = {
-        ...formData,
-        password: formData.contrasena, // Map to interface requirement
-        contrasena: formData.contrasena, // Keep original if backend needs it (checked interface next)
+        name: formData.nombre,
+        email: formData.correo_electronico,
+        identityCard: formData.cedula_identidad,
+        address: formData.direccion,
+        birthDate: formData.fecha_nacimiento,
+        password: formData.contrasena,
+        // Optional/Extra fields that might be used by backend implementation details
+        contrasena: formData.contrasena,
         deviceId,
         tipo_dispositivo,
         modelo_dispositivo,
+        // Include other formData properties if needed, but explicitly mapped ones satisfy the interface
+        estado: formData.estado,
+        numero_ayudas: formData.numero_ayudas,
+        estado_eliminado: formData.estado_eliminado
       };
 
       await register(dataToSend);

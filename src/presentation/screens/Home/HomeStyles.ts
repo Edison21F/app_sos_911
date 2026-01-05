@@ -26,31 +26,34 @@ export const styles = StyleSheet.create({
     textShadowRadius: 8,
     letterSpacing: 1,
   },
+  // Changed "content" to "scrollContent" usage context, or keep name "content" but use flexGrow
+  // We will keep "content" name but update properties for ScrollView usage
   content: {
-    flex: 1,
+    flexGrow: 1,
     padding: normalize(20),
-    justifyContent: 'center',
     alignItems: 'center',
-    paddingBottom: normalize(100)
+    paddingBottom: normalize(120), // Extra space for bottom tab bar
   },
   buttonContainer: {
     position: 'relative',
-    width: normalize(400),
-    height: normalize(400),
+    width: normalize(280),
+    height: normalize(280),
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: normalize(30),
+    marginTop: normalize(10),
   },
   linesContainer: {
     position: 'absolute',
-    width: normalize(400),
-    height: normalize(400),
+    width: normalize(280),
+    height: normalize(280),
     top: 0,
     left: 0,
   },
   nearbyPeopleContainer: {
     position: 'absolute',
-    width: normalize(380),
-    height: normalize(380),
+    width: normalize(300),
+    height: normalize(300),
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -87,8 +90,8 @@ export const styles = StyleSheet.create({
     textShadowRadius: 4,
   },
   outerButton: {
-    width: normalize(260),
-    height: normalize(260),
+    width: normalize(200),
+    height: normalize(200),
     borderRadius: normalize(300),
     backgroundColor: 'rgba(20, 0, 0, 0.6)',
     justifyContent: 'center',
@@ -116,8 +119,8 @@ export const styles = StyleSheet.create({
     borderColor: theme.colors.primary,
   },
   innerButton: {
-    width: normalize(220),
-    height: normalize(220),
+    width: normalize(160),
+    height: normalize(160),
     borderRadius: normalize(200),
     justifyContent: 'center',
     alignItems: 'center',
@@ -138,7 +141,7 @@ export const styles = StyleSheet.create({
   },
   subtitleText: {
     color: 'rgba(255, 255, 255, 0.9)',
-    fontSize: normalize(16),
+    fontSize: normalize(14), // Slightly smaller font
     textAlign: 'center',
     textShadowColor: 'rgba(0, 0, 0, 0.5)',
     textShadowOffset: { width: 0, height: 1 },
@@ -153,7 +156,7 @@ export const styles = StyleSheet.create({
   },
   buttonText: {
     color: 'white',
-    fontSize: normalize(70),
+    fontSize: normalize(60), // Slightly smaller font
     fontWeight: 'bold',
     textShadowColor: 'rgba(0, 0, 0, 0.5)',
     textShadowOffset: { width: 0, height: 2 },
@@ -252,10 +255,8 @@ export const styles = StyleSheet.create({
 
   // Botón de seguridad
   securityButton: {
-    position: 'absolute',
-    bottom: normalize(20),
-    left: normalize(20),
-    right: normalize(20),
+    width: '100%',
+    maxWidth: normalize(350),
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
     borderRadius: normalize(25),
     padding: normalize(15),
@@ -269,6 +270,9 @@ export const styles = StyleSheet.create({
     },
     shadowOpacity: 0.3,
     shadowRadius: 5,
+    alignSelf: 'center',
+    marginTop: normalize(30), // Space from elements above
+    marginBottom: normalize(20),
   },
   securityButtonContent: {
     flexDirection: 'row',

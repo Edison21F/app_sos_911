@@ -10,13 +10,13 @@ import {
   ScrollView,
   Platform,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, Feather } from '@expo/vector-icons';
 import { StackScreenProps } from '@react-navigation/stack';
 import { RootStackParamList } from '../../../navigation/Navigator';
 import { styles } from './AddContactStyles';
-import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useContactsViewModel } from '../../../hooks/useContactsViewModel';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
 type AddContactProps = StackScreenProps<RootStackParamList, 'AddContact'>;
 
@@ -31,7 +31,6 @@ const AddContact = ({ navigation, route }: AddContactProps) => {
 
   // State Search
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResult, setSearchResult] = useState<any>(null); // Kept for future "search before add" logic
 
   // --- LOGICA MANUAL ---
   const handleSaveManual = async () => {
@@ -58,7 +57,6 @@ const AddContact = ({ navigation, route }: AddContactProps) => {
     try {
       await sendContactRequest(searchQuery);
       Alert.alert('Solicitud Enviada', 'Se ha enviado una solicitud de contacto al usuario encontrado.');
-      setSearchResult(null);
       setSearchQuery('');
       navigation.goBack();
 
@@ -78,118 +76,152 @@ const AddContact = ({ navigation, route }: AddContactProps) => {
     }
   };
 
-  const handleSendRequest = () => {
-    // Alias for handleSearchUser in this simplified flow
-    handleSearchUser();
-  };
-
   return (
     <LinearGradient
-      colors={["#026b6b", "#2D353C"]}
+      colors={['#2c0000', '#000000']} // Dark Red to Black Gradient
       style={styles.backgroundImage}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
     >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scrollContainer}
-          keyboardShouldPersistTaps="handled"
+      <SafeAreaView style={styles.container}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={{ flex: 1 }}
         >
-          <SafeAreaView style={styles.container}>
+          <View style={styles.header}>
+            <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+              <Ionicons name="arrow-back" size={24} color="#fff" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Agregar Contacto</Text>
+          </View>
+
+          <ScrollView
+            contentContainerStyle={styles.scrollContainer}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
             <View style={styles.form}>
-              <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-                <Ionicons name="arrow-back" size={24} color="black" />
-              </TouchableOpacity>
 
               {/* TABS HEADER */}
-              <View style={{ flexDirection: 'row', marginBottom: 20, borderBottomWidth: 1, borderColor: '#eee' }}>
+              <Animated.View
+                entering={FadeInDown.delay(100).duration(600).springify()}
+                style={styles.tabContainer}
+              >
                 <TouchableOpacity
-                  style={{ flex: 1, padding: 10, alignItems: 'center', borderBottomWidth: 2, borderColor: activeTab === 'manual' ? '#00ACAC' : 'transparent' }}
+                  style={[styles.tabButton, activeTab === 'manual' && styles.activeTab]}
                   onPress={() => setActiveTab('manual')}
                 >
-                  <Text style={{ fontWeight: activeTab === 'manual' ? 'bold' : 'normal', color: activeTab === 'manual' ? '#00ACAC' : '#666' }}>Manual</Text>
+                  <Text style={[styles.tabText, activeTab === 'manual' && styles.activeTabText]}>Manual</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={{ flex: 1, padding: 10, alignItems: 'center', borderBottomWidth: 2, borderColor: activeTab === 'search' ? '#00ACAC' : 'transparent' }}
+                  style={[styles.tabButton, activeTab === 'search' && styles.activeTab]}
                   onPress={() => setActiveTab('search')}
                 >
-                  <Text style={{ fontWeight: activeTab === 'search' ? 'bold' : 'normal', color: activeTab === 'search' ? '#00ACAC' : '#666' }}>Buscar Usuario</Text>
+                  <Text style={[styles.tabText, activeTab === 'search' && styles.activeTabText]}>Buscar Usuario</Text>
                 </TouchableOpacity>
-              </View>
+              </Animated.View>
 
               {activeTab === 'manual' ? (
                 // --- FORMULARIO MANUAL ---
-                <>
-                  <View style={styles.imagePickerContainer}>
+                <View>
+                  <Animated.View entering={FadeInDown.delay(200).duration(600).springify()} style={styles.imagePickerContainer}>
                     <View style={styles.initialsContainer}>
-                      <Feather name="user" size={40} color="#fff" />
+                      <Feather name="user-plus" size={40} color="#fff" />
                     </View>
-                    <Text style={styles.imageLabel}>Contacto</Text>
-                  </View>
+                    <Text style={styles.imageLabel}>Nuevo Contacto Local</Text>
+                  </Animated.View>
 
-                  <Text style={styles.label}>Nombre:</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Ej. Juan Pérez"
-                    value={nombre}
-                    onChangeText={setNombre}
-                  />
+                  <Animated.View entering={FadeInDown.delay(300).duration(600).springify()} style={styles.fieldContainer}>
+                    <Text style={styles.label}>Nombre</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Ej. Juan Pérez"
+                      placeholderTextColor="rgba(255,255,255,0.4)"
+                      value={nombre}
+                      onChangeText={setNombre}
+                    />
+                  </Animated.View>
 
-                  <Text style={styles.label}>Teléfono:</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="+593 987 654 321"
-                    keyboardType="phone-pad"
-                    value={telefono}
-                    onChangeText={setTelefono}
-                  />
+                  <Animated.View entering={FadeInDown.delay(400).duration(600).springify()} style={styles.fieldContainer}>
+                    <Text style={styles.label}>Teléfono</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="+593 987 654 321"
+                      placeholderTextColor="rgba(255,255,255,0.4)"
+                      keyboardType="phone-pad"
+                      value={telefono}
+                      onChangeText={setTelefono}
+                    />
+                  </Animated.View>
 
-                  <Text style={styles.label}>Relación:</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Ej. Amigo cercano"
-                    value={descripcion}
-                    onChangeText={setDescripcion}
-                  />
+                  <Animated.View entering={FadeInDown.delay(500).duration(600).springify()} style={styles.fieldContainer}>
+                    <Text style={styles.label}>Relación (Opcional)</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Ej. Padre, Amigo, Vecino"
+                      placeholderTextColor="rgba(255,255,255,0.4)"
+                      value={descripcion}
+                      onChangeText={setDescripcion}
+                    />
+                  </Animated.View>
 
-                  <TouchableOpacity style={styles.saveButton} onPress={handleSaveManual} disabled={isLoading}>
-                    <Feather name="save" size={24} color="white" />
-                    <Text style={[styles.saveButtonText, { marginLeft: 8 }]}>
-                      {isLoading ? 'Guardando...' : 'Guardar Contacto'}
-                    </Text>
-                  </TouchableOpacity>
-                </>
+                  <Animated.View entering={FadeInUp.delay(600).duration(600).springify()}>
+                    <TouchableOpacity style={styles.saveButton} onPress={handleSaveManual} disabled={isLoading}>
+                      {isLoading ? (
+                        <Text style={styles.saveButtonText}>Guardando...</Text>
+                      ) : (
+                        <>
+                          <Feather name="save" size={20} color="white" />
+                          <Text style={styles.saveButtonText}>Guardar Contacto</Text>
+                        </>
+                      )}
+                    </TouchableOpacity>
+                  </Animated.View>
+                </View>
               ) : (
                 // --- FORMULARIO BUSQUEDA ---
-                <>
-                  <Text style={[styles.label, { marginTop: 10 }]}>Buscar por Cédula o Teléfono:</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Ingrese CI o celular"
-                    value={searchQuery}
-                    onChangeText={setSearchQuery}
-                  />
+                <View>
+                  <Animated.View entering={FadeInDown.delay(200).duration(600).springify()} style={styles.imagePickerContainer}>
+                    <View style={[styles.initialsContainer, { borderColor: '#00ACAC' }]}>
+                      <Feather name="search" size={40} color="#fff" />
+                    </View>
+                    <Text style={styles.imageLabel}>Buscar en la red SOS</Text>
+                  </Animated.View>
 
-                  <TouchableOpacity
-                    style={[styles.saveButton, { backgroundColor: '#333' }]}
-                    onPress={handleSearchUser}
-                    disabled={isLoading}
-                  >
-                    <Feather name="search" size={24} color="white" />
-                    <Text style={[styles.saveButtonText, { marginLeft: 8 }]}>
-                      {isLoading ? 'Buscando...' : 'Buscar'}
-                    </Text>
-                  </TouchableOpacity>
-                </>
+                  <Animated.View entering={FadeInDown.delay(300).duration(600).springify()} style={styles.fieldContainer}>
+                    <Text style={styles.label}>Cédula o Teléfono</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Ingrese identificación"
+                      placeholderTextColor="rgba(255,255,255,0.4)"
+                      value={searchQuery}
+                      onChangeText={setSearchQuery}
+                    />
+                  </Animated.View>
+
+                  <Animated.View entering={FadeInUp.delay(400).duration(600).springify()}>
+                    <TouchableOpacity
+                      style={[styles.saveButton, { backgroundColor: '#333', borderColor: '#555', borderWidth: 1 }]}
+                      onPress={handleSearchUser}
+                      disabled={isLoading}
+                    >
+                      {isLoading ? (
+                        <Text style={styles.saveButtonText}>Buscando...</Text>
+                      ) : (
+                        <>
+                          <Feather name="search" size={20} color="white" />
+                          <Text style={styles.saveButtonText}>Buscar Usuario</Text>
+                        </>
+                      )}
+                    </TouchableOpacity>
+                  </Animated.View>
+                </View>
               )}
 
             </View>
-          </SafeAreaView>
-        </ScrollView>
-      </KeyboardAvoidingView>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
     </LinearGradient>
   );
 };

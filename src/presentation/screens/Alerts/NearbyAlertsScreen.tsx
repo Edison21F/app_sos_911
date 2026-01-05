@@ -7,6 +7,7 @@ import { normalize } from '../../../shared/utils/dimensions';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/Navigator';
 import GlobalHeaderWrapper from '../../components/Header/GlobalHeaderWrapper';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type NearbyAlertsScreenProps = {
     navigation: NativeStackNavigationProp<RootStackParamList, 'NearbyAlerts'>;
@@ -24,6 +25,7 @@ type AlertaCercana = {
     };
     fecha_creacion: string;
     distancia?: number;
+    idUsuario?: string;
 };
 
 import { useNearbyAlertsViewModel } from '../../hooks/useNearbyAlertsViewModel';
@@ -32,10 +34,19 @@ import { useNearbyAlertsViewModel } from '../../hooks/useNearbyAlertsViewModel';
 
 const NearbyAlertsScreen: React.FC<NearbyAlertsScreenProps> = ({ navigation }) => {
     const { alerts, isLoading, myLocation, fetchNearbyAlerts } = useNearbyAlertsViewModel();
+    const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
     useEffect(() => {
         fetchNearbyAlerts();
     }, [fetchNearbyAlerts]);
+
+    useEffect(() => {
+        const getUserId = async () => {
+            const id = await AsyncStorage.getItem('clienteId');
+            setCurrentUserId(id);
+        };
+        getUserId();
+    }, []);
 
     const handleRefresh = () => {
         fetchNearbyAlerts();
@@ -97,7 +108,7 @@ const NearbyAlertsScreen: React.FC<NearbyAlertsScreenProps> = ({ navigation }) =
             <GlobalHeaderWrapper showBackButton={true} />
 
             <FlatList
-                data={alerts}
+                data={currentUserId ? alerts.filter(item => item.idUsuario !== currentUserId) : alerts}
                 keyExtractor={(item) => item._id}
                 renderItem={renderItem}
                 contentContainerStyle={styles.listContent}

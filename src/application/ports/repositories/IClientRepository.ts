@@ -15,6 +15,13 @@ export interface UpdateClientData {
     };
 }
 
+export interface DashboardStats {
+    alertasActivas: number;
+    alertasResueltas: number;
+    contactos: number;
+    tiempoRespuestaPromedio: number;
+}
+
 export interface IClientRepository {
     getClientProfile(clientId: string): Promise<Client>;
     updateClientProfile(clientId: string, data: UpdateClientData): Promise<void>;
@@ -23,4 +30,6 @@ export interface IClientRepository {
     addClientPhone(clientId: string, detail: string, number: string): Promise<ClientPhone>;
     updateClientPhone(phoneId: string | number, detail: string, number: string): Promise<void>;
     deleteClientPhone(phoneId: string | number): Promise<void>;
+    getDashboardStats(clientId: string): Promise<DashboardStats>;
+    getProfileImageUrl(imagePath: string): string;
 }

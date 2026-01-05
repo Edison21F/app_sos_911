@@ -32,12 +32,12 @@ export class ContactRepositoryApi implements IContactRepository {
         // EmergencyContacts usually involves inviting someone. Use existing /crear if appropriate or check logic.
         // For now using the previous /contactos/crear as placeholder or if it's the same system.
         // If it's emergency contacts, often they are linked users.
-        const response = await client.post('/contactos_emergencias/crear', { // Updated to likely endpoint
-            usuarioId: userId,
+        const response = await client.post('/contactos_emergencias/crear', {
+            clienteId: userId,
             nombre: contact.name,
             telefono: contact.phone,
-            relacion: contact.relationship,
-            es_emergencia: contact.isEmergency
+            descripcion: contact.relationship, // Backend maps 'relacion' or 'descripcion', usually description is safer for broader use
+            estado: 'activo' // Default status
         });
         return this.mapToContact(response.data);
     }

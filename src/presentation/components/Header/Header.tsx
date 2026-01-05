@@ -55,7 +55,13 @@ const Header: React.FC<HeaderProps> = ({
       </TouchableOpacity>
 
       {/* Title Removed as per request */}
-      <View style={{ flex: 1 }} />
+      <Text
+        style={headerStyles.headerTitle}
+        onPress={onTitlePress}
+        suppressHighlighting={true}
+      >
+        {getTitleByRoute()}
+      </Text>
     </View>
   );
 };

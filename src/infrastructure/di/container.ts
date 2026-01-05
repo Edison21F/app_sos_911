@@ -17,13 +17,17 @@ import { OfflineAlertService } from '../services/offlineAlert.service';
 import { LocationService } from '../services/location.service';
 import { SocketService } from '../services/SocketService';
 import { StartLocationSyncUseCase } from '../../application/use-cases/location/StartLocationSyncUseCase';
+import { StopLocationSyncUseCase } from '../../application/use-cases/location/StopLocationSyncUseCase'; // Imported
 import { GetCurrentLocationUseCase } from '../../application/use-cases/location/GetCurrentLocationUseCase';
 import { RenameLocationUseCase } from '../../application/use-cases/location/RenameLocationUseCase';
+import { PreferencesService } from '../services/preferences.service'; // Imported
+import { DeviceStatusService } from '../services/deviceStatus.service'; // Imported
 
 import { GetClientProfileUseCase } from '../../application/use-cases/client/GetClientProfileUseCase';
 import { UpdateClientProfileUseCase } from '../../application/use-cases/client/UpdateClientProfileUseCase';
 import { UploadProfileImageUseCase } from '../../application/use-cases/client/UploadProfileImageUseCase';
 import { ManageClientPhonesUseCase } from '../../application/use-cases/client/ManageClientPhonesUseCase';
+import { GetDashboardStatsUseCase } from '../../application/use-cases/client/GetDashboardStatsUseCase';
 
 import { GroupRepositoryApi } from '../repositories/GroupRepositoryApi';
 import { GetGroupsUseCase } from '../../application/use-cases/groups/GetGroupsUseCase';
@@ -45,12 +49,13 @@ import { GetPendingRequestsUseCase } from '../../application/use-cases/contacts/
 import { RespondToContactRequestUseCase } from '../../application/use-cases/contacts/RespondToContactRequestUseCase';
 import { SendContactRequestUseCase } from '../../application/use-cases/contacts/SendContactRequestUseCase';
 import { RegisterUseCase } from '../../application/use-cases/auth/RegisterUseCase';
-import { ContentRepositoryApi } from '../repositories/ContentRepositoryApi';
-import { GetAppContentUseCase } from '../../application/use-cases/information/GetAppContentUseCase';
-import { LocationRepositoryApi } from '../repositories/LocationRepositoryApi';
-import { GetSavedLocationsUseCase } from '../../application/use-cases/location/GetSavedLocationsUseCase';
-import { SaveLocationUseCase } from '../../application/use-cases/location/SaveLocationUseCase';
-import { DeleteLocationUseCase } from '../../application/use-cases/location/DeleteLocationUseCase';
+
+// Casos de Uso - Preferencias
+import { GetAutoLoginSettingUseCase } from '../../application/use-cases/preferences/GetAutoLoginSettingUseCase';
+import { ToggleAutoLoginSettingUseCase } from '../../application/use-cases/preferences/ToggleAutoLoginSettingUseCase';
+
+// Casos de Uso - Cliente (adicionales)
+import { GetProfileImageUrlUseCase } from '../../application/use-cases/client/GetProfileImageUrlUseCase';
 
 // Repositories & Services
 const authRepository = new AuthRepositoryApi();
@@ -61,6 +66,8 @@ const contactRepository = new ContactRepositoryApi();
 const contentRepository = new ContentRepositoryApi();
 const locationRepository = new LocationRepositoryApi();
 const locationService = new LocationService();
+const preferencesService = new PreferencesService(); // Instantiated
+const deviceStatusService = new DeviceStatusService(); // Instantiated
 
 // Use Cases
 const loginUseCase = new LoginUseCase(authRepository);
@@ -118,10 +125,6 @@ export const container = {
   updateClientProfileUseCase,
   uploadProfileImageUseCase,
   manageClientPhonesUseCase,
-  getAppContentUseCase,
-  getSavedLocationsUseCase,
-  saveLocationUseCase,
-  deleteLocationUseCase,
 
   // Use Cases - Groups
   getGroupsUseCase: new GetGroupsUseCase(groupRepository),
@@ -142,6 +145,5 @@ export const container = {
   getPendingRequestsUseCase: new GetPendingRequestsUseCase(contactRepository),
   respondToContactRequestUseCase: new RespondToContactRequestUseCase(contactRepository),
   sendContactRequestUseCase: new SendContactRequestUseCase(contactRepository),
-  registerUseCase: new RegisterUseCase(authRepository),
-  renameLocationUseCase: new RenameLocationUseCase(locationRepository)
+  registerUseCase: new RegisterUseCase(authRepository)
 };

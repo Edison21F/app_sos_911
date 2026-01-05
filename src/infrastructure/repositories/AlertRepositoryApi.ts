@@ -4,6 +4,7 @@ import client from '../http/client';
 
 import { OfflineAlertService } from '../services/offlineAlert.service';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import NetInfo from '@react-native-community/netinfo';
 
 export class AlertRepositoryApi implements IAlertRepository {
     private offlineService = new OfflineAlertService();
@@ -25,29 +26,43 @@ export class AlertRepositoryApi implements IAlertRepository {
             id_local: Math.random().toString(36).substring(7)
         };
 
+        // Check network connectivity
+        const netInfo = await NetInfo.fetch();
+        const isConnected = netInfo.isConnected;
+
         try {
-            // Validate payload minimal requires before sending? 
+            // Validate payload minimal requires before sending?
             if (!payload.idUsuarioSql) throw new Error('Usuario no identificado');
 
-            const response = await client.post('/alertas/enviar', payload);
-            return this.mapToAlert(response.data.alerta || response.data);
-        } catch (error) {
-            console.log('Sending alert failed, queuing offline...');
-            payload.emitida_offline = true;
-            // Adapting payload to AlertData interface for OfflineService
-            await this.offlineService.queueAlert(payload as any);
+            if (!isConnected) {
+                throw new Error('No internet connection');
+            }
 
-            // Return a temporary local Alert object so UI updates immediately
-            return {
-                id: payload.id_local,
-                type: type,
-                title: `Alerta ${type} (Offline)`,
-                location: location,
-                status: 'CREADA',
-                time: new Date(),
-                senderId: payload.idUsuarioSql || 'unknown',
-                isOffline: true // Add this property to Entity if needed, or infer from status
-            };
+            const response = await client.post('/alertas', payload);
+            return this.mapToAlert(response.data.data || response.data.alerta || response.data);
+        } catch (error) {
+            console.log('Sending alert failed:', (error as Error).message);
+            if (!isConnected) {
+                console.log('No connection, queuing offline...');
+                payload.emitida_offline = true;
+                // Adapting payload to AlertData interface for OfflineService
+                await this.offlineService.queueAlert(payload as any);
+
+                // Return a temporary local Alert object so UI updates immediately
+                return {
+                    id: payload.id_local,
+                    type: type,
+                    title: `Alerta ${type} (Offline)`,
+                    location: location,
+                    status: 'CREADA',
+                    time: new Date(),
+                    senderId: payload.idUsuarioSql || 'unknown',
+                    isOffline: true // Add this property to Entity if needed, or infer from status
+                };
+            } else {
+                // Connected but API failed, rethrow error
+                throw error;
+            }
         }
     }
 
@@ -80,6 +95,11 @@ export class AlertRepositoryApi implements IAlertRepository {
     }
 
     async cancelAlert(alertId: string): Promise<void> {
+        // If alertId looks like a local id (contains letters), skip API call
+        if (alertId && /^[a-zA-Z]/.test(alertId)) {
+            console.log('Skipping cancel for local alert id:', alertId);
+            return;
+        }
         await client.post(`/alertas/cancelar/${alertId}`);
     }
 
@@ -92,7 +112,7 @@ export class AlertRepositoryApi implements IAlertRepository {
     }
 
     async updateAlertStatus(alertId: string, status: string, comment?: string): Promise<void> {
-        await client.patch(`/alertas/${alertId}/estado`, {
+        await client.post(`/alertas/${alertId}/estado`, {
             estado: status,
             comentario: comment
         });

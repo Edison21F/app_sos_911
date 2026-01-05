@@ -1,9 +1,9 @@
-import React, { useEffect } from 'react';
-import { View, Text, ActivityIndicator, RefreshControl, ScrollView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, ActivityIndicator, RefreshControl, ScrollView, TouchableOpacity, TextInput, Modal, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../../components/Header/Header';
 import styles from './AlertHistoryStyles';
-import { ShieldAlert, Siren, Calendar, MapPin } from 'lucide-react-native';
+import { ShieldAlert, Siren, Calendar, MapPin, Filter, X, ChevronDown } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -85,11 +85,30 @@ const AlertCard = ({ alert, onUpdate }: { alert: Alert, onUpdate: (id: string) =
 };
 
 const AlertHistoryComponent = ({ navigation }: { navigation: any }) => {
-  const { alerts, loading, refreshing, fetchHistory, refresh, finalizeAlert } = useAlertHistoryViewModel();
+    const { alerts, loading, refreshing, fetchHistory, refresh, finalizeAlert } = useAlertHistoryViewModel();
+    const [showFilters, setShowFilters] = useState(false);
+    const [filterType, setFilterType] = useState('');
+    const [filterStatus, setFilterStatus] = useState('');
+    const [filterDate, setFilterDate] = useState('');
+    const [showTypeModal, setShowTypeModal] = useState(false);
+    const [showStatusModal, setShowStatusModal] = useState(false);
 
-  useEffect(() => {
-    fetchHistory();
-  }, []);
+   useEffect(() => {
+     fetchHistory();
+   }, []);
+
+   const filteredAlerts = alerts.filter(alert => {
+     const matchesType = !filterType || alert.type === filterType;
+     const matchesStatus = !filterStatus || alert.status === filterStatus;
+     const matchesDate = !filterDate || (alert.time && format(new Date(alert.time), 'yyyy-MM-dd').includes(filterDate));
+     return matchesType && matchesStatus && matchesDate;
+   });
+
+   const clearFilters = () => {
+     setFilterType('');
+     setFilterStatus('');
+     setFilterDate('');
+   };
 
   return (
     <LinearGradient
@@ -102,6 +121,51 @@ const AlertHistoryComponent = ({ navigation }: { navigation: any }) => {
 
         <Header showBackButton={true} onBackPress={() => navigation.goBack()} customTitle="Historial de Alertas" />
 
+        {/* Filter Toggle */}
+        <View style={styles.filterContainer}>
+          <TouchableOpacity style={styles.filterBtn} onPress={() => setShowFilters(!showFilters)}>
+            <Filter size={20} color="#FFF" />
+            <Text style={styles.filterBtnText}>Filtros</Text>
+          </TouchableOpacity>
+          {(filterType || filterStatus || filterDate) && (
+            <TouchableOpacity style={styles.clearBtn} onPress={clearFilters}>
+              <X size={16} color="#FFF" />
+              <Text style={styles.clearBtnText}>Limpiar</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Filters */}
+        {showFilters && (
+          <View style={styles.filtersPanel}>
+            <Text style={styles.filterTitle}>Filtrar por:</Text>
+            <View style={styles.filterRow}>
+              <Text style={styles.filterLabel}>Tipo:</Text>
+              <TouchableOpacity style={styles.dropdown} onPress={() => setShowTypeModal(true)}>
+                <Text style={styles.dropdownText}>{filterType || 'Todos'}</Text>
+                <ChevronDown size={16} color="#FFF" />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.filterRow}>
+              <Text style={styles.filterLabel}>Estado:</Text>
+              <TouchableOpacity style={styles.dropdown} onPress={() => setShowStatusModal(true)}>
+                <Text style={styles.dropdownText}>{filterStatus || 'Todos'}</Text>
+                <ChevronDown size={16} color="#FFF" />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.filterRow}>
+              <Text style={styles.filterLabel}>Fecha (YYYY-MM-DD):</Text>
+              <TextInput
+                style={styles.dateInput}
+                placeholder="Ej: 2023-12-01"
+                placeholderTextColor="#666"
+                value={filterDate}
+                onChangeText={setFilterDate}
+              />
+            </View>
+          </View>
+        )}
+
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContainer}
@@ -109,8 +173,8 @@ const AlertHistoryComponent = ({ navigation }: { navigation: any }) => {
         >
           {loading ? (
             <ActivityIndicator size="large" color="#FF9E5D" style={{ marginTop: 50 }} />
-          ) : alerts.length > 0 ? (
-            alerts.map(alert => (
+          ) : filteredAlerts.length > 0 ? (
+            filteredAlerts.map(alert => (
               <AlertCard key={alert.id} alert={alert} onUpdate={finalizeAlert} />
             ))
           ) : (
@@ -119,6 +183,72 @@ const AlertHistoryComponent = ({ navigation }: { navigation: any }) => {
             </View>
           )}
         </ScrollView>
+
+        {/* Type Modal */}
+        <Modal visible={showTypeModal} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Seleccionar Tipo</Text>
+              <FlatList
+                data={[
+                  { label: 'Todos', value: '' },
+                  { label: 'MEDICA', value: 'MEDICA' },
+                  { label: 'INCENDIO', value: 'INCENDIO' },
+                  { label: 'PELIGRO', value: 'PELIGRO' },
+                  { label: 'TRANSITO', value: 'TRANSITO' },
+                  { label: 'PREVENTIVA', value: 'PREVENTIVA' },
+                ]}
+                keyExtractor={(item) => item.value}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.modalItem}
+                    onPress={() => {
+                      setFilterType(item.value);
+                      setShowTypeModal(false);
+                    }}
+                  >
+                    <Text style={styles.modalItemText}>{item.label}</Text>
+                  </TouchableOpacity>
+                )}
+              />
+              <TouchableOpacity style={styles.modalClose} onPress={() => setShowTypeModal(false)}>
+                <Text style={styles.modalCloseText}>Cerrar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Status Modal */}
+        <Modal visible={showStatusModal} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Seleccionar Estado</Text>
+              <FlatList
+                data={[
+                  { label: 'Todos', value: '' },
+                  { label: 'CREADA', value: 'CREADA' },
+                  { label: 'CANCELADA', value: 'CANCELADA' },
+                ]}
+                keyExtractor={(item) => item.value}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.modalItem}
+                    onPress={() => {
+                      setFilterStatus(item.value);
+                      setShowStatusModal(false);
+                    }}
+                  >
+                    <Text style={styles.modalItemText}>{item.label}</Text>
+                  </TouchableOpacity>
+                )}
+              />
+              <TouchableOpacity style={styles.modalClose} onPress={() => setShowStatusModal(false)}>
+                <Text style={styles.modalCloseText}>Cerrar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
       </SafeAreaView>
     </LinearGradient>
   );

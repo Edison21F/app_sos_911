@@ -26,6 +26,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { useNotificationContext } from '../../contexts/NotificationContext';
 
 const { width } = Dimensions.get('window');
 
@@ -35,7 +36,8 @@ const NotificationCard: React.FC<{
   onDelete: (id: string) => void;
   onMapPress: (location: { latitude: number; longitude: number }) => void;
   onCalificarPress: (notification: Notification) => void;
-}> = ({ notification, index, onDelete, onMapPress, onCalificarPress }) => {
+  onDetailPress: (notification: Notification) => void;
+}> = ({ notification, index, onDelete, onMapPress, onCalificarPress, onDetailPress }) => {
 
   // Design Config based on status/type (Optional refinement)
   const isMedical = notification.title.includes('MEDICA') || notification.alertType === 'sos';
@@ -90,6 +92,13 @@ const NotificationCard: React.FC<{
             <Text style={styles.btnText}>Ver ubicación</Text>
           </TouchableOpacity>
 
+          <TouchableOpacity
+            style={styles.btnDetail}
+            onPress={() => onDetailPress(notification)}
+          >
+            <Text style={styles.btnText}>Ver Detalle</Text>
+          </TouchableOpacity>
+
           {notification.status === 'pending' && (
             <TouchableOpacity
               style={styles.btnRate}
@@ -108,6 +117,7 @@ import { useNotificationsViewModel } from '../../hooks/useNotificationsViewModel
 
 const NotificationsScreen: React.FC<NotificationsProps> = ({ navigation }) => {
   const { notifications, loading, refreshing, refresh, setNotifications } = useNotificationsViewModel();
+  const { resetCount } = useNotificationContext();
   const [mapLocation, setMapLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 
   // Rating State
@@ -116,10 +126,12 @@ const NotificationsScreen: React.FC<NotificationsProps> = ({ navigation }) => {
   const [calificacionStep, setCalificacionStep] = useState<'select' | 'input'>('select');
   const [calificacionTipo, setCalificacionTipo] = useState<'sos' | '911' | 'unnecessary' | null>(null);
   const [calificacionMensaje, setCalificacionMensaje] = useState('');
+  const [selectedDetail, setSelectedDetail] = useState<Notification | null>(null);
 
   useEffect(() => {
     refresh();
-  }, [refresh]);
+    resetCount(); // Reset notification count when viewing notifications
+  }, [refresh, resetCount]);
 
   const onRefresh = () => { refresh(); };
 
@@ -160,7 +172,7 @@ const NotificationsScreen: React.FC<NotificationsProps> = ({ navigation }) => {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#fff" />}
         >
           {loading ? (
-            <ActivityIndicator size="large" color="#FF9E5D" style={{ marginTop: 50 }} />
+          <ActivityIndicator size="large" color="#FF9E5D" style={{ marginTop: 50 }} />
           ) : notifications.length > 0 ? (
             notifications.map((item: Notification, index: number) => (
               <NotificationCard
@@ -170,7 +182,8 @@ const NotificationsScreen: React.FC<NotificationsProps> = ({ navigation }) => {
                 onDelete={() => { }}
                 onMapPress={setMapLocation}
                 onCalificarPress={handleCalificar}
-              />
+                onDetailPress={setSelectedDetail}
+                />
             ))
           ) : (
             <View style={styles.emptyContainer}>
@@ -201,6 +214,44 @@ const NotificationsScreen: React.FC<NotificationsProps> = ({ navigation }) => {
               >
                 <Marker coordinate={mapLocation || { latitude: 0, longitude: 0 }} />
               </MapView>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Detail Modal */}
+        <Modal visible={!!selectedDetail} transparent animationType="slide" onRequestClose={() => setSelectedDetail(null)}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.detailModal}>
+              <View style={styles.detailHeader}>
+                <Text style={styles.detailTitle}>Detalle de Alerta</Text>
+                <TouchableOpacity onPress={() => setSelectedDetail(null)}>
+                  <Text style={styles.closeDetailText}>X</Text>
+                </TouchableOpacity>
+              </View>
+              {selectedDetail && (
+                <ScrollView style={styles.detailContent}>
+                  <Text style={styles.detailLabel}>Tipo:</Text>
+                  <Text style={styles.detailValue}>{selectedDetail.title}</Text>
+                  <Text style={styles.detailLabel}>Descripción:</Text>
+                  <Text style={styles.detailValue}>{selectedDetail.description}</Text>
+                  <Text style={styles.detailLabel}>Fecha:</Text>
+                  <Text style={styles.detailValue}>{selectedDetail.time}</Text>
+                  <Text style={styles.detailLabel}>Ubicación:</Text>
+                  <Text style={styles.detailValue}>
+                    Lat: {selectedDetail.location.latitude.toFixed(4)}, Lng: {selectedDetail.location.longitude.toFixed(4)}
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.detailMapBtn}
+                    onPress={() => {
+                      setMapLocation(selectedDetail.location);
+                      setSelectedDetail(null);
+                    }}
+                  >
+                    <MapPin size={16} color="#FFF" />
+                    <Text style={styles.detailMapText}>Ver en Mapa</Text>
+                  </TouchableOpacity>
+                </ScrollView>
+              )}
             </View>
           </View>
         </Modal>
@@ -351,6 +402,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  btnDetail: {
+    flex: 1,
+    backgroundColor: '#6b7280', // Grey
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   btnText: {
     color: '#FFF',
     fontWeight: 'bold',
@@ -419,6 +479,52 @@ const styles = StyleSheet.create({
     minHeight: 80,
     textAlignVertical: 'top',
     marginBottom: 15
+  },
+
+  // Detail Modal Styles
+  detailModal: {
+    height: 500,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  detailHeader: {
+    padding: 15,
+    backgroundColor: '#262626',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  detailTitle: { color: '#FFF', fontWeight: 'bold' },
+  closeDetailText: { color: '#ccc', fontSize: 18, fontWeight: 'bold' },
+  detailContent: {
+    padding: 20,
+  },
+  detailLabel: {
+    color: '#FFF',
+    fontWeight: 'bold',
+    fontSize: 16,
+    marginTop: 10,
+    marginBottom: 5,
+  },
+  detailValue: {
+    color: '#d1d5db',
+    fontSize: 14,
+    marginBottom: 10,
+  },
+  detailMapBtn: {
+    flexDirection: 'row',
+    backgroundColor: '#00BFA5',
+    padding: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20,
+  },
+  detailMapText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+    marginLeft: 8,
   }
 });
 

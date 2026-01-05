@@ -11,9 +11,9 @@ export class StopEmergencyUseCase {
         // 1. Stop Device Behavior (Sound/Vibration)
         await this.deviceService.stopBehaviors();
 
-        // 2. Update Alert Status in Backend
+        // 2. Cancel Alert in Backend
         if (alertId) {
-            await this.alertRepository.updateAlertStatus(alertId, 'CERRADA', 'Usuario indica estar a salvo (Estoy a Salvo)');
+            await this.alertRepository.cancelAlert(alertId);
         }
     }
 }
