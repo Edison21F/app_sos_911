@@ -20,7 +20,7 @@ export const styles = StyleSheet.create({
   },
   mapContainer: {
     width: '90%',
-    height: '70%',
+    height: '60%', // Reduced from 70% to give more room for buttons
     borderRadius: normalize(15),
     overflow: 'hidden',
     marginBottom: normalize(20),
@@ -51,10 +51,10 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: theme.colors.primary, // Red Button
-    paddingVertical: normalize(12),
+    paddingVertical: normalize(10), // Reduced from 12
     paddingHorizontal: normalize(20),
     borderRadius: normalize(10),
-    marginBottom: normalize(10),
+    marginBottom: normalize(10), // Reduced from 15 to keep it closer but separated
     shadowColor: theme.colors.primary,
     shadowOpacity: 0.4,
     shadowRadius: 8,
@@ -66,7 +66,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: theme.colors.primaryDark, // Darker Red
-    paddingVertical: normalize(12),
+    paddingVertical: normalize(10), // Reduced from 12
     paddingHorizontal: normalize(20),
     borderRadius: normalize(10),
     shadowColor: theme.colors.primaryDark,
@@ -74,6 +74,7 @@ export const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 5,
     width: normalize(230),
+    marginBottom: normalize(10), // Reduced from 15
   },
   buttonText: {
     color: '#fff',

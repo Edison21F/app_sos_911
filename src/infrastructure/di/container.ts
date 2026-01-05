@@ -18,6 +18,7 @@ import { LocationService } from '../services/location.service';
 import { SocketService } from '../services/SocketService';
 import { StartLocationSyncUseCase } from '../../application/use-cases/location/StartLocationSyncUseCase';
 import { GetCurrentLocationUseCase } from '../../application/use-cases/location/GetCurrentLocationUseCase';
+import { RenameLocationUseCase } from '../../application/use-cases/location/RenameLocationUseCase';
 
 import { GetClientProfileUseCase } from '../../application/use-cases/client/GetClientProfileUseCase';
 import { UpdateClientProfileUseCase } from '../../application/use-cases/client/UpdateClientProfileUseCase';
@@ -44,6 +45,12 @@ import { GetPendingRequestsUseCase } from '../../application/use-cases/contacts/
 import { RespondToContactRequestUseCase } from '../../application/use-cases/contacts/RespondToContactRequestUseCase';
 import { SendContactRequestUseCase } from '../../application/use-cases/contacts/SendContactRequestUseCase';
 import { RegisterUseCase } from '../../application/use-cases/auth/RegisterUseCase';
+import { ContentRepositoryApi } from '../repositories/ContentRepositoryApi';
+import { GetAppContentUseCase } from '../../application/use-cases/information/GetAppContentUseCase';
+import { LocationRepositoryApi } from '../repositories/LocationRepositoryApi';
+import { GetSavedLocationsUseCase } from '../../application/use-cases/location/GetSavedLocationsUseCase';
+import { SaveLocationUseCase } from '../../application/use-cases/location/SaveLocationUseCase';
+import { DeleteLocationUseCase } from '../../application/use-cases/location/DeleteLocationUseCase';
 
 // Repositories & Services
 const authRepository = new AuthRepositoryApi();
@@ -51,6 +58,8 @@ const alertRepository = new AlertRepositoryApi();
 const clientRepository = new ClientRepositoryApi();
 const groupRepository = new GroupRepositoryApi();
 const contactRepository = new ContactRepositoryApi();
+const contentRepository = new ContentRepositoryApi();
+const locationRepository = new LocationRepositoryApi();
 const locationService = new LocationService();
 
 // Use Cases
@@ -73,57 +82,66 @@ const getClientProfileUseCase = new GetClientProfileUseCase(clientRepository);
 const updateClientProfileUseCase = new UpdateClientProfileUseCase(clientRepository);
 const uploadProfileImageUseCase = new UploadProfileImageUseCase(clientRepository);
 const manageClientPhonesUseCase = new ManageClientPhonesUseCase(clientRepository);
+const getAppContentUseCase = new GetAppContentUseCase(contentRepository);
+const getSavedLocationsUseCase = new GetSavedLocationsUseCase(locationRepository);
+const saveLocationUseCase = new SaveLocationUseCase(locationRepository);
+const deleteLocationUseCase = new DeleteLocationUseCase(locationRepository);
 
 export const container = {
-    authRepository,
-    alertRepository,
-    clientRepository,
-    groupRepository,
-    contactRepository,
-    locationService,
-    liveTrackingService: new SocketService(),
-    deviceService: new DeviceBehaviorService(),
-    offlineAlertService: new OfflineAlertService(),
+  authRepository,
+  alertRepository,
+  clientRepository,
+  groupRepository,
+  contactRepository,
+  locationService,
+  liveTrackingService: new SocketService(),
+  deviceService: new DeviceBehaviorService(),
+  offlineAlertService: new OfflineAlertService(),
 
-    loginUseCase,
-    logoutUseCase,
-    getCurrentUserUseCase,
-    getCsrfTokenUseCase,
+  loginUseCase,
+  logoutUseCase,
+  getCurrentUserUseCase,
+  getCsrfTokenUseCase,
 
-    sendAlertUseCase,
-    stopEmergencyUseCase,
-    getNotificationsUseCase,
-    getNearbyAlertsUseCase,
-    updateAlertLocationUseCase,
-    updateAlertStatusUseCase,
-    getAlertHistoryUseCase: new GetAlertHistoryUseCase(alertRepository),
+  sendAlertUseCase,
+  stopEmergencyUseCase,
+  getNotificationsUseCase,
+  getNearbyAlertsUseCase,
+  updateAlertLocationUseCase,
+  updateAlertStatusUseCase,
+  getAlertHistoryUseCase: new GetAlertHistoryUseCase(alertRepository),
 
-    startLocationSyncUseCase,
-    getCurrentLocationUseCase,
+  startLocationSyncUseCase,
+  getCurrentLocationUseCase,
 
-    getClientProfileUseCase,
-    updateClientProfileUseCase,
-    uploadProfileImageUseCase,
-    manageClientPhonesUseCase,
+  getClientProfileUseCase,
+  updateClientProfileUseCase,
+  uploadProfileImageUseCase,
+  manageClientPhonesUseCase,
+  getAppContentUseCase,
+  getSavedLocationsUseCase,
+  saveLocationUseCase,
+  deleteLocationUseCase,
 
-    // Use Cases - Groups
-    getGroupsUseCase: new GetGroupsUseCase(groupRepository),
-    createGroupUseCase: new CreateGroupUseCase(groupRepository),
-    joinGroupUseCase: new JoinGroupUseCase(groupRepository),
-    leaveGroupUseCase: new LeaveGroupUseCase(groupRepository),
-    getGroupDetailsUseCase: new GetGroupDetailsUseCase(groupRepository),
-    getGroupMembersUseCase: new GetGroupMembersUseCase(groupRepository),
-    uploadGroupImageUseCase: new UploadGroupImageUseCase(groupRepository),
-    getGroupMessagesUseCase: new GetGroupMessagesUseCase(groupRepository),
-    sendGroupMessageUseCase: new SendGroupMessageUseCase(groupRepository),
+  // Use Cases - Groups
+  getGroupsUseCase: new GetGroupsUseCase(groupRepository),
+  createGroupUseCase: new CreateGroupUseCase(groupRepository),
+  joinGroupUseCase: new JoinGroupUseCase(groupRepository),
+  leaveGroupUseCase: new LeaveGroupUseCase(groupRepository),
+  getGroupDetailsUseCase: new GetGroupDetailsUseCase(groupRepository),
+  getGroupMembersUseCase: new GetGroupMembersUseCase(groupRepository),
+  uploadGroupImageUseCase: new UploadGroupImageUseCase(groupRepository),
+  getGroupMessagesUseCase: new GetGroupMessagesUseCase(groupRepository),
+  sendGroupMessageUseCase: new SendGroupMessageUseCase(groupRepository),
 
-    // Use Cases - Contacts
-    getContactsUseCase: new GetContactsUseCase(contactRepository),
-    addContactUseCase: new AddContactUseCase(contactRepository),
-    updateContactUseCase: new UpdateContactUseCase(contactRepository),
-    deleteContactUseCase: new DeleteContactUseCase(contactRepository),
-    getPendingRequestsUseCase: new GetPendingRequestsUseCase(contactRepository),
-    respondToContactRequestUseCase: new RespondToContactRequestUseCase(contactRepository),
-    sendContactRequestUseCase: new SendContactRequestUseCase(contactRepository),
-    registerUseCase: new RegisterUseCase(authRepository)
+  // Use Cases - Contacts
+  getContactsUseCase: new GetContactsUseCase(contactRepository),
+  addContactUseCase: new AddContactUseCase(contactRepository),
+  updateContactUseCase: new UpdateContactUseCase(contactRepository),
+  deleteContactUseCase: new DeleteContactUseCase(contactRepository),
+  getPendingRequestsUseCase: new GetPendingRequestsUseCase(contactRepository),
+  respondToContactRequestUseCase: new RespondToContactRequestUseCase(contactRepository),
+  sendContactRequestUseCase: new SendContactRequestUseCase(contactRepository),
+  registerUseCase: new RegisterUseCase(authRepository),
+  renameLocationUseCase: new RenameLocationUseCase(locationRepository)
 };

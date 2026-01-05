@@ -6,6 +6,7 @@ import {
   SafeAreaView,
   ImageBackground,
 } from 'react-native';
+import { useLocationViewModel } from '../../hooks/useLocationViewModel';
 import MapView, { Marker, PROVIDER_GOOGLE, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
@@ -25,8 +26,7 @@ type LocationScreenNavigationProp = NavigationProp<RootStackParamList>;
 
 const LocationScreen = () => {
   const navigation = useNavigation<LocationScreenNavigationProp>();
-  // const [isSidebarOpen, setSidebarOpen] = useState(false); // Removed
-  const [visibleLocations, setVisibleLocations] = useState<Location[]>([]);
+  const { savedLocations, saveCurrentLocation, deleteLocation, renameLocation } = useLocationViewModel();
   const [mapReady, setMapReady] = useState(false);
   const mapRef = useRef<MapView | null>(null);
 
@@ -113,6 +113,7 @@ const LocationScreen = () => {
     }
   };
 
+
   const handleShowSavedLocations = () => {
     setModalVisible(true);
   };
@@ -170,10 +171,18 @@ const LocationScreen = () => {
               <Ionicons name="location-outline" size={20} color="white" />
               <Text style={styles.buttonText}>Ver mis ubicaciones</Text>
             </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.buttonSecondary}
+              onPress={() => saveCurrentLocation(currentLocation.latitude, currentLocation.longitude)}
+            >
+              <Ionicons name="save-outline" size={20} color="white" />
+              <Text style={styles.buttonText}>Guardar Ubicación Actual</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
-        {modalVisible && <SeeLocations closeModal={() => setModalVisible(false)} />}
+        {modalVisible && <SeeLocations closeModal={() => setModalVisible(false)} savedLocations={savedLocations} deleteLocation={deleteLocation} renameLocation={renameLocation} />}
       </SafeAreaView>
     </LinearGradient>
   );
