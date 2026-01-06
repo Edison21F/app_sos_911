@@ -79,8 +79,11 @@ export class AlertRepositoryApi implements IAlertRepository {
         return Array.isArray(data) ? data.map((d: any) => this.mapToAlert(d)) : [];
     }
 
-    async getNotifications(userId: string): Promise<any[]> {
-        const response = await client.get(`/alertas/notificaciones/${userId}`);
+    async getNotifications(userId: string, timestamp?: number): Promise<any[]> {
+        // Add timestamp to prevent caching
+        const response = await client.get(`/alertas/notificaciones/${userId}`, {
+            params: { _t: timestamp || Date.now() }
+        });
         if (response.data.success) {
             return response.data.data;
         }

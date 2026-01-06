@@ -31,7 +31,32 @@ export class AuthRepositoryApi implements IAuthRepository {
     }
 
     async register(data: RegisterData): Promise<User> {
-        const response = await client.post('/clientes/registro', data);
+        // Map English field names to Spanish for backend compatibility
+        const payload: any = {
+            nombre: data.name,
+            correo_electronico: data.email,
+            cedula_identidad: data.identityCard,
+            direccion: data.address,
+            fecha_nacimiento: data.birthDate,
+            contrasena: data.password,
+        };
+        
+        // Add extra fields if present
+        const dataAny = data as any;
+        if (dataAny.nombre) payload.nombre = dataAny.nombre;
+        if (dataAny.correo_electronico) payload.correo_electronico = dataAny.correo_electronico;
+        if (dataAny.cedula_identidad) payload.cedula_identidad = dataAny.cedula_identidad;
+        if (dataAny.direccion) payload.direccion = dataAny.direccion;
+        if (dataAny.fecha_nacimiento) payload.fecha_nacimiento = dataAny.fecha_nacimiento;
+        if (dataAny.contrasena) payload.contrasena = dataAny.contrasena;
+        if (dataAny.estado) payload.estado = dataAny.estado;
+        if (dataAny.numero_ayudas !== undefined) payload.numero_ayudas = dataAny.numero_ayudas;
+        if (dataAny.estado_eliminado) payload.estado_eliminado = dataAny.estado_eliminado;
+        if (dataAny.deviceId) payload.deviceId = dataAny.deviceId;
+        if (dataAny.tipo_dispositivo) payload.tipo_dispositivo = dataAny.tipo_dispositivo;
+        if (dataAny.modelo_dispositivo) payload.modelo_dispositivo = dataAny.modelo_dispositivo;
+        
+        const response = await client.post('/clientes/registro', payload);
         return this.mapToUser(response.data);
     }
 

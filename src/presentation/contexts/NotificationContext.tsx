@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { container } from '../../infrastructure/di/container';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface NotificationContextType {
   notificationCount: number;
@@ -28,6 +29,25 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   const incrementCount = () => setNotificationCount(prev => prev + 1);
   const decrementCount = () => setNotificationCount(prev => Math.max(0, prev - 1));
   const resetCount = () => setNotificationCount(0);
+
+  // Initialize notification count from backend
+  useEffect(() => {
+    const fetchInitialCount = async () => {
+      try {
+        const clienteId = await AsyncStorage.getItem('clienteId');
+        if (clienteId) {
+          // Add timestamp to prevent caching
+          const data = await container.getNotificationsUseCase.execute(clienteId, Date.now());
+          setNotificationCount(data.length);
+          console.log('NotificationContext: Initial count loaded:', data.length);
+        }
+      } catch (error) {
+        console.error('Error fetching initial notification count:', error);
+      }
+    };
+
+    fetchInitialCount();
+  }, []);
 
   useEffect(() => {
     try {

@@ -15,7 +15,8 @@ export const useNotificationsViewModel = () => {
             const clienteId = await AsyncStorage.getItem('clienteId');
             if (!clienteId) return;
 
-            const data = await container.getNotificationsUseCase.execute(clienteId);
+            // Add timestamp to prevent caching
+            const data = await container.getNotificationsUseCase.execute(clienteId, Date.now());
 
             const mappedData: Notification[] = data.map((alerta: any) => ({
                 id: alerta._id,
