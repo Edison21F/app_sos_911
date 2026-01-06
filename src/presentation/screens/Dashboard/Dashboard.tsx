@@ -8,6 +8,7 @@ import ModernHeader from '../../components/Header/ModernHeader';
 import { AlertTriangle, Users, CheckCircle, Clock, Zap, Wifi, MapPin } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useDashboardViewModel } from '../../hooks/useDashboardViewModel';
+import { useNotificationContext } from '../../contexts/NotificationContext';
 
 const DashboardScreen = () => {
     /**
@@ -32,6 +33,7 @@ const DashboardScreen = () => {
         getProfileImageUrl,
         refreshStats
     } = useDashboardViewModel();
+    const { notificationCount } = useNotificationContext();
 
     const [refreshing, setRefreshing] = React.useState(false);
 
@@ -57,9 +59,9 @@ const DashboardScreen = () => {
             <SafeAreaView style={{ flex: 1 }}>
                 <ModernHeader
                     userName={user ? user.name.split(' ')[0] : 'Usuario'}
-                    notificationCount={2}
+                    notificationCount={notificationCount}
                     onLogout={() => { /* TODO: Move to VM or separate auth hook? For now keep empty as per original placeholder */ }}
-                    onNotificationPress={() => navigation.navigate('Alertas' as any)}
+                    onNotificationPress={() => navigation.navigate('Notifications' as any)}
                     onProfilePress={() => navigation.navigate('Profile' as any)}
                     profileImage={getProfileImageUrl()}
                 />

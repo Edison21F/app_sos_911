@@ -125,8 +125,12 @@ const ProfileScreen = () => {
       aspect: [1, 1],
       quality: 0.7,
     });
-    if (!result.canceled) {
+    console.log('pickImage: result:', JSON.stringify(result));
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      console.log('pickImage: selected image URI:', result.assets[0].uri);
       await uploadImage(result.assets[0].uri);
+    } else {
+      console.log('pickImage: no image selected or result.canceled');
     }
   };
 
@@ -205,21 +209,30 @@ const ProfileScreen = () => {
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 
-        {/* 1. Profile Display */}
-        <Animated.View entering={FadeInDown.delay(100).duration(500)} style={styles.avatarSection}>
-          <View style={styles.imageWrapper}>
-            {client!.profileImage ? ( // client is not null here
-              <Image source={{ uri: client!.profileImage }} style={styles.avatarImage} />
-            ) : (
-              <View style={styles.avatarPlaceholder}><Text style={styles.avatarText}>{getInitials(fullName)}</Text></View>
-            )}
-            <TouchableOpacity style={styles.cameraBtn} onPress={pickImage}>
-              <Feather name="camera" size={16} color="#FFF" />
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.nameText}>{fullName}</Text>
-          <Text style={styles.emailText}>{email}</Text>
-        </Animated.View>
+       {/* 1. Profile Display */}
+<Animated.View entering={FadeInDown.delay(100).duration(500)} style={styles.avatarSection}>
+  <View style={styles.imageWrapper}>
+    {client!.profileImage ? (
+      <Image
+        key={client!.profileImage}
+        source={{
+          uri: `${client!.profileImage}?t=${Date.now()}`
+        }}
+        style={styles.avatarImage}
+      />
+    ) : (
+      <View style={styles.avatarPlaceholder}>
+        <Text style={styles.avatarText}>{getInitials(fullName)}</Text>
+      </View>
+    )}
+    <TouchableOpacity style={styles.cameraBtn} onPress={pickImage}>
+      <Feather name="camera" size={16} color="#FFF" />
+    </TouchableOpacity>
+  </View>
+  <Text style={styles.nameText}>{fullName}</Text>
+  <Text style={styles.emailText}>{email}</Text>
+</Animated.View>
+
 
         {/* 2. Info Cards */}
         <Animated.View entering={FadeInDown.delay(200).duration(500)}>

@@ -17,6 +17,11 @@ export class ClientRepositoryApi implements IClientRepository {
         const response = await client.get(`/clientes/detalle/${clientId}`);
         const data = response.data;
 
+        // Build full profile image URL if foto_perfil exists
+        const profileImageUrl = data.foto_perfil 
+            ? `${API_BASE_URL}/uploads/profiles/${data.foto_perfil}`
+            : undefined;
+
         return {
             id: data.id,
             name: data.nombre,
@@ -24,7 +29,7 @@ export class ClientRepositoryApi implements IClientRepository {
             identityCard: data.cedula_identidad,
             address: data.direccion,
             birthDate: data.fecha_nacimiento,
-            profileImage: data.foto_perfil,
+            profileImage: profileImageUrl,
             medicalRecord: data.ficha_medica ? {
                 bloodType: data.ficha_medica.tipo_sangre,
                 allergies: data.ficha_medica.alergias,
@@ -57,6 +62,9 @@ export class ClientRepositoryApi implements IClientRepository {
     }
 
     async uploadProfileImage(clientId: string, imageUri: string): Promise<string> {
+        console.log('ClientRepositoryApi.uploadProfileImage: starting for clientId:', clientId);
+        console.log('ClientRepositoryApi.uploadProfileImage: imageUri:', imageUri);
+        
         const formData = new FormData();
         // @ts-ignore
         formData.append('foto_perfil', {
@@ -65,23 +73,31 @@ export class ClientRepositoryApi implements IClientRepository {
             type: 'image/jpeg',
         });
 
-        // Using fetch directly because axios has issues with FormData in RN sometimes, or reusing existing logic
-        // But here we use 'client' if possible. Since the original UseCase used fetch, we can stick to fetch or try axios.
-        // Let's use axios but configure headers correctly.
-        // Actually, for file uploads in Clean Architecture, better to keep the implementation detail here.
+        const API_URL = `${API_BASE_URL}/clientes/upload-profile/${clientId}`;
+        console.log('ClientRepositoryApi.uploadProfileImage: fetching:', API_URL);
 
-        // We will strictly follow the original implementation logic:
-        const response = await fetch(`${API_BASE_URL}/clientes/upload-profile/${clientId}`, {
-            method: 'POST',
-            body: formData,
-            headers: { 'Accept': 'application/json' } // Fetch adds multipart automatically
-        });
-
-        const data = await response.json();
-        if (response.ok && data.foto_perfil) {
-            return `${API_BASE_URL}/uploads/profiles/${data.foto_perfil}`;
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                body: formData,
+                headers: { 'Accept': 'application/json' }
+            });
+            
+            console.log('ClientRepositoryApi.uploadProfileImage: response status:', response.status);
+            
+            const data = await response.json();
+            console.log('ClientRepositoryApi.uploadProfileImage: response data:', JSON.stringify(data));
+            
+            if (response.ok && data.foto_perfil) {
+                const result = `${API_BASE_URL}/uploads/profiles/${data.foto_perfil}`;
+                console.log('ClientRepositoryApi.uploadProfileImage: success, returning:', result);
+                return result;
+            }
+            throw new Error('Failed to upload image: ' + (data.message || 'Unknown error'));
+        } catch (error) {
+            console.error('ClientRepositoryApi.uploadProfileImage: error:', error);
+            throw error;
         }
-        throw new Error('Failed to upload image');
     }
 
     async getClientPhones(clientId: string): Promise<ClientPhone[]> {
