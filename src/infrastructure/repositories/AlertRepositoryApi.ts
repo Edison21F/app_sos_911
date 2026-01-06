@@ -95,13 +95,16 @@ export class AlertRepositoryApi implements IAlertRepository {
     }
 
     async cancelAlert(alertId: string): Promise<void> {
-        // If alertId looks like a local id (contains letters), skip API call
-        if (alertId && /^[a-zA-Z]/.test(alertId)) {
-            console.log('Skipping cancel for local alert id:', alertId);
-            return;
-        }
-        await client.post(`/alertas/cancelar/${alertId}`);
+    // Si es alerta local (offline), no llamar al backend
+    if (alertId && /^[a-zA-Z]/.test(alertId)) {
+        console.log('Skipping cancel for local alert id:', alertId);
+        return;
     }
+
+    await client.patch(`/alertas/${alertId}/estado`, {
+        estado: 'CANCELADA'
+    });
+}
 
     async updateLocation(alertId: string, location: AlertLocation): Promise<void> {
         await client.put(`/alertas/${alertId}/ubicacion`, {
@@ -111,12 +114,13 @@ export class AlertRepositoryApi implements IAlertRepository {
         });
     }
 
-    async updateAlertStatus(alertId: string, status: string, comment?: string): Promise<void> {
-        await client.post(`/alertas/${alertId}/estado`, {
-            estado: status,
-            comentario: comment
-        });
-    }
+   async updateAlertStatus(alertId: string, status: string, comment?: string): Promise<void> {
+    await client.patch(`/alertas/${alertId}/estado`, {
+        estado: status,
+        comentario: comment
+    });
+}
+
 
     private mapToAlert(data: any): Alert {
         // Basic mapping, adjust fields as necessary based on API response

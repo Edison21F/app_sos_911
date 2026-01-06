@@ -55,15 +55,24 @@ export const useProfileViewModel = () => {
     };
 
     const uploadImage = async (uri: string) => {
-        if (!client) return;
+        if (!client) {
+            console.log('uploadImage: client is null');
+            return;
+        }
+
+        console.log('uploadImage: starting upload for client:', client.id);
         try {
-            const newImageUrl = await uploadProfileImageUseCase.execute(client.id.toString(), uri);
-            setClient(prev => prev ? { ...prev, profileImage: newImageUrl } : null);
-            return true;
+            const result = await uploadProfileImageUseCase.execute(client.id.toString(), uri);
+            console.log('uploadImage: upload result:', result);
+            
+            // Reload profile to get fresh data from server
+            await loadProfile();
+            
+            console.log('uploadImage: profile reloaded successfully');
+            Alert.alert('Éxito', 'Imagen de perfil actualizada correctamente');
         } catch (error) {
-            console.error('Error uploading image:', error);
-            Alert.alert('Error', 'Falló subida de imagen');
-            return false;
+            console.error('uploadImage error:', error);
+            Alert.alert('Error', 'No se pudo subir la imagen');
         }
     };
 
