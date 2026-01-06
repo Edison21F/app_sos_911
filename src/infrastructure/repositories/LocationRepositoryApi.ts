@@ -31,10 +31,10 @@ export class LocationRepositoryApi implements ILocationRepository {
   async saveLocation(location: Omit<SavedLocation, 'id'>): Promise<SavedLocation> {
     // A la inversa: Traducir de Domain a Backend
     const payload = {
-      cliente_id: location.clienteId, // Importante: snake_case
+      clienteId: location.clienteId, // Updated to camelCase for Hexagonal Backend
       latitud: location.latitud,
       longitud: location.longitud,
-      nombre: location.nombre, // <-- Enviamos nombre
+      nombre: location.nombre,
       marca_tiempo: location.marca_tiempo,
       estado: location.estado
     };
