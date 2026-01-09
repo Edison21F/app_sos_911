@@ -13,11 +13,13 @@ import { UpdateAlertStatusUseCase } from '../../application/use-cases/alerts/Upd
 import { GetAlertHistoryUseCase } from '../../application/use-cases/alerts/GetAlertHistoryUseCase';
 import { StopEmergencyUseCase } from '../../application/use-cases/alerts/StopEmergencyUseCase';
 import { DeviceBehaviorService } from '../services/deviceBehavior.service';
+import { DeviceStatusService } from '../services/deviceStatus.service';
 import { OfflineAlertService } from '../services/offlineAlert.service';
 import { LocationService } from '../services/location.service';
 import { SocketService } from '../services/SocketService';
+import { PreferencesService } from '../services/preferences.service';
 import { StartLocationSyncUseCase } from '../../application/use-cases/location/StartLocationSyncUseCase';
-import { StopLocationSyncUseCase } from '../../application/use-cases/location/StopLocationSyncUseCase'; // Imported
+import { StopLocationSyncUseCase } from '../../application/use-cases/location/StopLocationSyncUseCase';
 import { GetCurrentLocationUseCase } from '../../application/use-cases/location/GetCurrentLocationUseCase';
 import { RenameLocationUseCase } from '../../application/use-cases/location/RenameLocationUseCase';
 
@@ -26,6 +28,10 @@ import { UpdateClientProfileUseCase } from '../../application/use-cases/client/U
 import { UploadProfileImageUseCase } from '../../application/use-cases/client/UploadProfileImageUseCase';
 import { ManageClientPhonesUseCase } from '../../application/use-cases/client/ManageClientPhonesUseCase';
 import { GetDashboardStatsUseCase } from '../../application/use-cases/client/GetDashboardStatsUseCase';
+import { GetProfileImageUrlUseCase } from '../../application/use-cases/client/GetProfileImageUrlUseCase';
+
+import { GetAutoLoginSettingUseCase } from '../../application/use-cases/preferences/GetAutoLoginSettingUseCase';
+import { ToggleAutoLoginSettingUseCase } from '../../application/use-cases/preferences/ToggleAutoLoginSettingUseCase';
 
 import { GroupRepositoryApi } from '../repositories/GroupRepositoryApi';
 import { GetGroupsUseCase } from '../../application/use-cases/groups/GetGroupsUseCase';
@@ -63,48 +69,71 @@ const contactRepository = new ContactRepositoryApi();
 const contentRepository = new ContentRepositoryApi();
 const locationRepository = new LocationRepositoryApi();
 const locationService = new LocationService();
+const preferencesService = new PreferencesService();
+const deviceStatusService = new DeviceStatusService();
 
-// Use Cases
+// Use Cases - Auth
 const loginUseCase = new LoginUseCase(authRepository);
 const logoutUseCase = new LogoutUseCase(authRepository);
 const getCurrentUserUseCase = new GetCurrentUserUseCase(authRepository);
 const getCsrfTokenUseCase = new GetCsrfTokenUseCase(authRepository);
 
-const sendAlertUseCase = new SendAlertUseCase(alertRepository, new DeviceBehaviorService());
-const stopEmergencyUseCase = new StopEmergencyUseCase(alertRepository, new DeviceBehaviorService());
+const deviceBehaviorService = new DeviceBehaviorService();
+
+// Use Cases - Alerts - Use the SAME deviceBehaviorService instance for both
+const sendAlertUseCase = new SendAlertUseCase(alertRepository, deviceBehaviorService);
+const stopEmergencyUseCase = new StopEmergencyUseCase(alertRepository, deviceBehaviorService);
 const getNotificationsUseCase = new GetNotificationsUseCase(alertRepository);
 const getNearbyAlertsUseCase = new GetNearbyAlertsUseCase(alertRepository);
 const updateAlertLocationUseCase = new UpdateAlertLocationUseCase(alertRepository);
 const updateAlertStatusUseCase = new UpdateAlertStatusUseCase(alertRepository);
 
+// Use Cases - Location
 const startLocationSyncUseCase = new StartLocationSyncUseCase(locationService);
+const stopLocationSyncUseCase = new StopLocationSyncUseCase(locationService);
 const getCurrentLocationUseCase = new GetCurrentLocationUseCase(locationService);
 
+// Use Cases - Client
 const getClientProfileUseCase = new GetClientProfileUseCase(clientRepository);
 const updateClientProfileUseCase = new UpdateClientProfileUseCase(clientRepository);
 const uploadProfileImageUseCase = new UploadProfileImageUseCase(clientRepository);
 const manageClientPhonesUseCase = new ManageClientPhonesUseCase(clientRepository);
+const getDashboardStatsUseCase = new GetDashboardStatsUseCase(clientRepository);
+const getProfileImageUrlUseCase = new GetProfileImageUrlUseCase(clientRepository);
+
+// Use Cases - Preferences
+const getAutoLoginSettingUseCase = new GetAutoLoginSettingUseCase(preferencesService);
+const toggleAutoLoginSettingUseCase = new ToggleAutoLoginSettingUseCase(preferencesService);
+
+// Use Cases - Content
 const getAppContentUseCase = new GetAppContentUseCase(contentRepository);
 const getSavedLocationsUseCase = new GetSavedLocationsUseCase(locationRepository);
 const saveLocationUseCase = new SaveLocationUseCase(locationRepository);
 const deleteLocationUseCase = new DeleteLocationUseCase(locationRepository);
 
 export const container = {
+  // Repositories
   authRepository,
   alertRepository,
   clientRepository,
   groupRepository,
   contactRepository,
+
+  // Services
   locationService,
+  preferencesService,
+  deviceStatusService,
   liveTrackingService: new SocketService(),
-  deviceService: new DeviceBehaviorService(),
+  deviceService: deviceBehaviorService,
   offlineAlertService: new OfflineAlertService(),
 
+  // Use Cases - Auth
   loginUseCase,
   logoutUseCase,
   getCurrentUserUseCase,
   getCsrfTokenUseCase,
 
+  // Use Cases - Alerts
   sendAlertUseCase,
   stopEmergencyUseCase,
   getNotificationsUseCase,
@@ -113,13 +142,24 @@ export const container = {
   updateAlertStatusUseCase,
   getAlertHistoryUseCase: new GetAlertHistoryUseCase(alertRepository),
 
+  // Use Cases - Location
   startLocationSyncUseCase,
+  stopLocationSyncUseCase,
   getCurrentLocationUseCase,
 
+  // Use Cases - Client
   getClientProfileUseCase,
   updateClientProfileUseCase,
   uploadProfileImageUseCase,
   manageClientPhonesUseCase,
+  getDashboardStatsUseCase,
+  getProfileImageUrlUseCase,
+
+  // Use Cases - Preferences
+  getAutoLoginSettingUseCase,
+  toggleAutoLoginSettingUseCase,
+
+  // Use Cases - Content
   getAppContentUseCase,
   getSavedLocationsUseCase,
   saveLocationUseCase,

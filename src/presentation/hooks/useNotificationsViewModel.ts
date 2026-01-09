@@ -18,8 +18,8 @@ export const useNotificationsViewModel = () => {
             // Add timestamp to prevent caching
             const data = await container.getNotificationsUseCase.execute(clienteId, Date.now());
 
-            const mappedData: Notification[] = data.map((alerta: any) => ({
-                id: alerta._id,
+            const mappedData: Notification[] = data.map((alerta: any, index: number) => ({
+                id: alerta._id || alerta.id || `notification-${index}-${Date.now()}`,
                 title: `Alerta: ${alerta.tipo || 'GENERAL'}`,
                 description: alerta.detalles || 'Sin detalles adicionales',
                 time: alerta.fecha_creacion ? format(new Date(alerta.fecha_creacion), "d MMMM, h:mm a", { locale: es }) : 'Reciente',
